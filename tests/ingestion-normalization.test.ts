@@ -52,10 +52,11 @@ describe("séries UFRJ", () => {
     expect(parseInterval("08–07")).toBeNull();
   });
   it("tipo de dia", () => {
-    expect(dayTypeOf("2023-03-01")).toEqual({ weekday: 3, dayType: "DIA_UTIL" });
+    expect(dayTypeOf("2023-03-01")).toEqual({ weekday: 3, dayType: "DIA_UTIL", note: null });
+    expect(dayTypeOf("2019-03-05").dayType).toBe("FERIADO");
     expect(dayTypeOf("2023-03-04").dayType).toBe("SABADO");
     expect(dayTypeOf("2023-03-05").dayType).toBe("DOMINGO");
-    expect(dayTypeOf(null)).toEqual({ weekday: null, dayType: "DESCONHECIDO" });
+    expect(dayTypeOf(null)).toEqual({ weekday: null, dayType: "DESCONHECIDO", note: null });
   });
   it("duas séries no segmento Américas 2000 · Santa Cruz · Central", () => {
     expect(series.map((s) => s.segmentId)).toEqual([mx.segmentIdByRow[2], mx.segmentIdByRow[2]]);

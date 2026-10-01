@@ -1,7 +1,8 @@
-import type { Measurement, QualityIssue, QualityStatus, RoadSegment, Series, TrafficObservation } from "@/domain/types";
+import type { Measurement, QualityIssue, QualityStatus, RoadSegment, TrafficObservation } from "@/domain/types";
+import type { PeriodStats } from "@/engine/aggregate";
+import type { PdfIssue } from "@/normalization/normalize-pdf";
 import { RAW_SECTION2 } from "@/data/raw/parametros-matriz";
 import { weekendDropCheck } from "@/engine/intervals";
-import { aggregateHourly, overnightRatio } from "@/engine/series";
 import { parseQuantity } from "@/normalization/parse";
 
 export { classifyRawCell } from "./cells";
@@ -37,10 +38,9 @@ export function validateMeasurements(log: IssueLog, ms: Measurement[]) {
 export function validateSegments(log: IssueLog, segs: RoadSegment[], ms: Measurement[], seriesBySegment: Record<string, number>) {
   for (const s of segs) {
     const target = { kind: "segment" as const, id: s.id };
-    if (!/\d/.test(s.speedRecordRaw)) log.add({ status: "AUSENTE", rule: "VELOCIDADE_AUSENTE", target, message: "Nenhum valor de velocidade disponível (relatório de velocidades não incorporado).", evidence: s.speedRecordRaw });
-    if (s.laneCount == null) log.add({ status: "AUSENTE", rule: "FAIXAS_NAO_QUANTIFICADAS", target, message: "Número de faixas não explícito.", evidence: s.lanesMonitoredRaw });
+    if (!seriesBySegment[s.id]) log.add({ status: "AUSENTE", rule: "SEM_DADOS_HORARIOS", target, message: "Segmento só existe na matriz (.docx): os PDFs registram estes trechos separados por sentido/pista.", evidence: s.directionRaw });
+    if (s.laneCount == null && s.source.documentId === "DOC-PARAMETROS") log.add({ status: "AUSENTE", rule: "FAIXAS_NAO_QUANTIFICADAS", target, message: "Número de faixas não explícito.", evidence: s.lanesMonitoredRaw });
     if (s.structureNote) log.add({ status: "SUSPEITO", rule: "AGRUPAMENTO_NA_MATRIZ", target, message: s.structureNote, evidence: s.directionRaw });
-    if (!seriesBySegment[s.id]) log.add({ status: "AUSENTE", rule: "SERIE_HORARIA_AUSENTE", target, message: "Nenhuma série horária incorporada para este segmento (dados existem no PDF de fluxos, segundo a especificação, ou não foram identificados).", evidence: "—" });
     const vdm = ms.find((m) => m.segmentId === s.id && m.metric === "VDM_DIAS_UTEIS");
     const fds = ms.find((m) => m.segmentId === s.id && m.metric === "VOLUME_FIM_DE_SEMANA");
     if (vdm?.value && fds?.value) {
@@ -65,7 +65,7 @@ export function validateCrossSection(log: IssueLog, ms: Measurement[], centralSe
     });
   }
   log.add({ status: "SUSPEITO", rule: "DOCUMENTO_SECUNDARIO", target: { kind: "document", id: "DOC-PARAMETROS" }, message: "Documento é uma síntese (conteúdo duplicado, marcadores 'PDF+ n', frase truncada). Conferir com os relatórios primários.", evidence: "Estrutura do .docx" });
-  log.add({ status: "SUSPEITO", rule: "FONTE_INTERMEDIARIA", target: { kind: "document", id: "DOC-ESPECIFICACAO" }, message: "Séries horárias transcritas pelo autor da especificação, não extraídas diretamente do PDF. Conferir valores com 'Fluxos UFRJ-Revisado (1).pdf'.", evidence: "docs/fontes/ESPECIFICACAO_MOVA_trechos.md" });
+  log.add({ status: "SUSPEITO", rule: "ATRIBUICAO_INCORRETA", target: { kind: "document", id: "DOC-ESPECIFICACAO" }, message: "A série 'de março de 2019' citada na especificação como pista central é, no PDF, da pista LATERAL em 01/03/2019. O sistema usa o PDF.", evidence: "DOC-FLUXOS-UFRJ p. 1 × especificação §3" });
 }
 
 /**
@@ -98,21 +98,31 @@ export function alternationRun(values: (number | null)[]): { start: number; end:
   return best;
 }
 
-export function validateSeries(log: IssueLog, series: Series[], obs: TrafficObservation[]) {
-  for (const s of series) {
-    const so = obs.filter((o) => o.seriesId === s.id);
-    const target = { kind: "series" as const, id: s.id };
-    for (const o of so) {
-      if (o.quality !== "VALIDO") log.add({ status: o.quality, rule: "OBSERVACAO_" + o.quality, target: { kind: "observation", id: o.id }, message: `Intervalo ${o.startTime} sem valor numérico utilizável.`, evidence: o.raw ?? "—" });
+const br = (d: string) => d.split("-").reverse().join("/");
+
+/** Qualidade dos dados dos PDFs, agregada por segmento e mês (um registro por regra). */
+export function validatePdf(log: IssueLog, pdfIssues: PdfIssue[], periods: [string, PeriodStats[]][]) {
+  for (const p of pdfIssues) log.add({ status: p.status, rule: p.rule, target: { kind: p.target.startsWith("pdf-") ? "series" : "document", id: p.target }, message: p.message, evidence: p.evidence });
+  for (const [segId, list] of periods) {
+    for (const ps of list) {
+      const target = { kind: "segment" as const, id: `${segId}@${ps.period}` };
+      const cells = ps.days.flatMap((d) => d.hourly.map((h, i) => ({ d, h, i })));
+      const missing = ps.days.reduce((s, d) => s + d.hourly.filter((h) => h.statuses.includes("AUSENTE")).length, 0);
+      const zeros = ps.days.reduce((s, d) => s + d.hourly.filter((h) => h.statuses.includes("SUSPEITO")).length, 0);
+      void cells;
+      if (missing) log.add({ status: "AUSENTE", rule: "HORAS_SEM_VALOR", target, message: `${missing} hora(s) sem valor no relatório; não preenchidas.`, evidence: ps.days.filter((d) => d.hourly.some((h) => h.statuses.includes("AUSENTE"))).map((d) => br(d.series.date as string)).join(", ") });
+      if (zeros) log.add({ status: "SUSPEITO", rule: "HORAS_ZERADAS", target, message: `${zeros} hora(s) com zero — padrão típico de equipamento parado; excluídas das médias.`, evidence: ps.days.filter((d) => d.hourly.some((h) => h.statuses.includes("SUSPEITO"))).map((d) => br(d.series.date as string)).join(", ") });
+      const inc = ps.days.filter((d) => !d.complete);
+      if (inc.length) log.add({ status: "INCOMPLETO", rule: "DIAS_INCOMPLETOS", target, message: `${inc.length} de ${ps.days.length} dia(s) sem as 24 horas válidas: fora de VDM e perfis médios.`, evidence: inc.map((d) => `${br(d.series.date as string)} (${d.validHours}h)`).join(", ") });
+      const tot = ps.days.filter((d) => d.complete && d.series.reportedDailyTotal != null && d.series.reportedDailyTotal !== d.total);
+      if (tot.length) log.add({ status: "SUSPEITO", rule: "TOTAL_DIVERGENTE", target, message: "Soma das horas difere do total impresso.", evidence: tot.map((d) => `${br(d.series.date as string)}: ${d.total} × ${d.series.reportedDailyTotal}`).join(", ") });
+      const alt = ps.days.filter((d) => alternationRun(d.hourly.map((h) => h.flow)));
+      if (alt.length) log.add({ status: "SUSPEITO", rule: "PADRAO_ALTERNADO", target, message: `${alt.length} dia(s) com variação horária alternada (heurística M-QA-ALTERNANCIA): conferir operação do equipamento.`, evidence: alt.map((d) => br(d.series.date as string)).join(", ") });
+      if (ps.v85?.constant && ps.v85.n > 3) log.add({ status: "SUSPEITO", rule: "V85_CONSTANTE", target, message: `V85 impresso idêntico (${ps.v85.median} km/h) em ${ps.v85.n} dias: provável valor mensal repetido.`, evidence: "Relatório 06" });
+      const low = ps.days.filter((d) => d.series.reportedV85 != null && d.series.reportedDailyMeanSpeed != null && (d.series.reportedV85 as number) < (d.series.reportedDailyMeanSpeed as number));
+      if (low.length) log.add({ status: "SUSPEITO", rule: "V85_MENOR_QUE_MEDIA", target, message: `${low.length} dia(s) com V85 impresso menor que a velocidade média do dia — impossível por definição.`, evidence: low.slice(0, 6).map((d) => `${br(d.series.date as string)}: V85 ${d.series.reportedV85} < média ${d.series.reportedDailyMeanSpeed}`).join(", ") });
+      if (ps.overnight && ps.overnight.ratio >= 0.05) log.add({ status: "SUSPEITO", rule: "DIVERGENCIA_REGRA_MADRUGADA", target, message: `No perfil médio de dias úteis, a madrugada chega a ${(ps.overnight.ratio * 100).toFixed(1).replace(".", ",")}% do pico; §2.B diz 'geralmente abaixo de 5%'. Registrado, não corrigido.`, evidence: RAW_SECTION2.variacaoHoraria });
     }
-    if (!s.date) log.add({ status: "INCOMPLETO", rule: "DATA_NAO_INFORMADA", target, message: "Série sem dia informado: dia da semana e tipo de dia desconhecidos; não entra em comparações por tipo de dia.", evidence: s.sourceRef?.locator ?? "" });
-    const hourly = aggregateHourly(so);
-    const missingHours = hourly.filter((h) => h.flow == null).map((h) => h.hour);
-    if (missingHours.length) log.add({ status: "INCOMPLETO", rule: "DIA_INCOMPLETO", target, message: `${24 - missingHours.length} de 24 horas disponíveis; volume diário não calculado. Horas ausentes: ${missingHours.map((h) => `${String(h).padStart(2, "0")}h`).join(", ")}.`, evidence: "—" });
-    const run = alternationRun(hourly.map((h) => h.flow));
-    if (run) log.add({ status: "SUSPEITO", rule: "PADRAO_ALTERNADO", target, message: `Variação horária alterna de sentido repetidamente entre ${String(run.start).padStart(2, "0")}h e ${String(run.end + 1).padStart(2, "0")}h (heurística do sistema, M-QA-ALTERNANCIA). Conferir transcrição com o PDF.`, evidence: hourly.slice(run.start, run.end + 1).map((h) => `${String(h.hour).padStart(2, "0")}h=${h.flow}`).join(" · ") });
-    const on = overnightRatio(hourly);
-    if (on && !on.belowRule) log.add({ status: "SUSPEITO", rule: "DIVERGENCIA_REGRA_MADRUGADA", target, message: `Maior fluxo 01–05h (${String(on.nightHour).padStart(2, "0")}h: ${on.nightFlow}) equivale a ${pct(on.ratio)} do pico (${on.peakFlow}). §2.B diz 'geralmente abaixo de 5%' — divergência registrada, não corrigida.`, evidence: RAW_SECTION2.variacaoHoraria });
   }
 }
 

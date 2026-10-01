@@ -34,7 +34,7 @@ export const METHODOLOGY: MethodologyEntry[] = [
     externalSource: null,
     version: "0.2.0",
     status: "CONFIRMADO",
-    gaps: ["Valores disponíveis vêm da transcrição na especificação (2 séries), não do PDF.", "A 'faixa' (lane) de cada contagem não foi transcrita: as séries estão no nível da pista."],
+    gaps: ["Tabelas por faixa (lane) existem em parte dos locais; esta versão usa o total das faixas.", "Células vazias e zeros são registrados e não preenchidos."],
   },
   {
     id: "M-VELOCIDADE-OBS",
@@ -53,7 +53,7 @@ export const METHODOLOGY: MethodologyEntry[] = [
     externalSource: null,
     version: "0.2.0",
     status: "CONFIRMADO",
-    gaps: ["Relatório de velocidades não recebido — nenhum valor no sistema.", "Não se sabe se V85 é reportado por hora, por dia ou por período."],
+    gaps: ["V85 é impresso por dia; em 2019 o mesmo valor se repete no mês inteiro (provável valor mensal).", "Na Linha Vermelha (05/2022) o V85 impresso é menor que a média — dado suspeito."],
   },
   {
     id: "M-MATRIZ",
@@ -89,7 +89,7 @@ export const METHODOLOGY: MethodologyEntry[] = [
     externalSource: null,
     version: "0.2.0",
     status: "INFERIDO",
-    gaps: ["A fonte nomeia o indicador ('Volume Diário Médio') sem definir procedimento (quais dias, quantas semanas, dias incompletos). Média aritmética inferida do nome.", "Nenhuma série com 24 h completas disponível: VDM não calculável a partir das séries."],
+    gaps: ["A fonte nomeia o indicador ('Volume Diário Médio') sem definir procedimento (quais dias, quantas semanas, dias incompletos). Média aritmética inferida do nome.", "Dias com hora vazia ou zerada e feriados ficam fora — critério do sistema."],
   },
   {
     id: "M-FLUXO-HORARIO",
@@ -223,7 +223,7 @@ export const METHODOLOGY: MethodologyEntry[] = [
     category: "REGRA",
     description: "A fonte distingue dias úteis (segunda a sexta), sábados e domingos.",
     formula: null,
-    implementation: "dia da semana da data: seg–sex → DIA_UTIL; sáb → SABADO; dom → DOMINGO; sem data → DESCONHECIDO.",
+    implementation: "datas do calendário de feriados/atípicos → FERIADO; seg–sex → DIA_UTIL; sáb → SABADO; dom → DOMINGO; sem data → DESCONHECIDO.",
     variables: [],
     unit: null,
     purpose: "Evitar tratar todos os dias com o mesmo padrão (especificação §11).",
@@ -231,7 +231,7 @@ export const METHODOLOGY: MethodologyEntry[] = [
     externalSource: null,
     version: "0.2.0",
     status: "CONFIRMADO",
-    gaps: ["Feriados não são tratados (não definidos na fonte): um feriado em dia de semana seria classificado como DIA_UTIL."],
+    gaps: ["Calendário de feriados é FONTE EXTERNA (src/data/calendario.ts): Carnaval 2019 e 2022, Cinzas, 1º de maio."],
   },
   {
     id: "M-JANELAS-PICO",
@@ -410,6 +410,26 @@ export const METHODOLOGY: MethodologyEntry[] = [
     version: "0.3.0",
     status: "EXPERIMENTAL",
     gaps: ["Em câmeras fixas (caso de uso real) a estabilização é desnecessária."],
+  },
+  {
+    id: "M-INTENSIDADE-RELATIVA",
+    name: "Intensidade relativa ao histórico do local (barras do painel)",
+    category: "HIPOTESE",
+    description:
+      "Régua visual do painel: o fluxo da hora dividido pelo maior fluxo horário já registrado no mesmo trecho; a velocidade da hora dividida pela maior velocidade média horária do trecho.",
+    formula: null,
+    implementation: "I_fluxo = q_h / max(q_h do trecho) ; I_vel = v̄_h / max(v̄_h do trecho). Cor contínua verde→vermelho, sem faixas nem limites.",
+    variables: [
+      { symbol: "q_h", meaning: "Fluxo na hora h do dia exibido", unit: "veíc/h" },
+      { symbol: "max(q_h)", meaning: "Maior fluxo horário válido do trecho em todos os períodos", unit: "veíc/h" },
+    ],
+    unit: "%",
+    purpose: "Comunicar visualmente quando o movimento está alto ou baixo para aquele local, sem inventar limites de congestionamento.",
+    sources: [],
+    externalSource: "Escolha de visualização do sistema; não é indicador da fonte. O máximo histórico não é a capacidade da via.",
+    version: "0.4.0",
+    status: "EXPERIMENTAL",
+    gaps: ["Será substituída pela condição operacional oficial quando o professor definir indicador-base e limites (M-CONDICAO)."],
   },
 ];
 

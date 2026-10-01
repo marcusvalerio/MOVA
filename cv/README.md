@@ -56,6 +56,10 @@ Também aparecem em `run.json` e na página.
 - **Velocidade e fila:** não são estimadas, porque exigem calibração métrica da cena.
 - **Fluxo em veíc/h:** extrapolar 7,5 s para uma taxa horária tem incerteza muito alta. Serve só para demonstrar o encadeamento do motor.
 
+## Gravação em campo
+
+Veja [ROTEIRO_GRAVACAO.md](ROTEIRO_GRAVACAO.md).
+
 ## Próximo passo com câmera real
 
 Com acesso autorizado a uma câmera (CIVITAS ou outra), basta trocar a fonte de vídeo por um stream e emitir uma `CameraObservation` a cada 5 minutos para `POST /api/camera/observations`. Para isso:

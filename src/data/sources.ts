@@ -4,21 +4,21 @@ import type { SourceDocument } from "@/domain/types";
 export const SOURCE_DOCUMENTS: SourceDocument[] = [
   {
     id: "DOC-FLUXOS-UFRJ",
-    title: "Fluxos UFRJ-Revisado (1).pdf",
-    fileName: null,
+    title: "Fiscalização Eletrônica — Relatório 05 (Fluxos UFRJ-Revisado)",
+    fileName: "docs/fontes/FLUXOS_UFRJ_REVISADO.pdf",
     kind: "PRIMARIA",
-    availableInRepo: false,
+    availableInRepo: true,
     description:
-      "Relatórios de fluxo veicular diário por faixa horária, por mês e por endereço (logradouro, sentido, pista, faixa, coordenada, data, dia da semana, horário, fluxo, resumo diário). Dados de 2019 e 2023. Não anexado (tamanho). Trechos transcritos via DOC-ESPECIFICACAO.",
+      "Fluxo veicular por hora, por dia, por mês e por endereço (199 p.). Extraído para data/extraido/fluxos.json (1.046 dias; totais conferidos com o impresso em 100% dos dias completos). Fonte principal de dados do MOVA.",
   },
   {
     id: "DOC-VELOCIDADES",
-    title: "Relatório de velocidades",
-    fileName: null,
+    title: "Fiscalização Eletrônica — Relatório 06 (Velocidade UFRJ)",
+    fileName: "docs/fontes/VELOCIDADE_UFRJ.pdf",
     kind: "PRIMARIA",
-    availableInRepo: false,
+    availableInRepo: true,
     description:
-      "Velocidade média por data/dia da semana/horário e informações de 85º percentil. Não anexado; nenhum valor disponível no sistema.",
+      "Velocidade média por hora e 85º percentil por dia (234 p.). Extraído para data/extraido/velocidade.json. Tabelas por faixa (lane) disponíveis em parte dos locais; esta versão usa o total das faixas.",
   },
   {
     id: "DOC-PARAMETROS",
@@ -27,7 +27,7 @@ export const SOURCE_DOCUMENTS: SourceDocument[] = [
     kind: "SECUNDARIA",
     availableInRepo: true,
     description:
-      "Matriz comparativa de 7 corredores/sentidos (seção 1) e relatório qualitativo (seção 2). Valores em faixas aproximadas; sem fórmulas. Conteúdo duplicado, com marcadores 'PDF+ n' — síntese dos PDFs primários.",
+      "Síntese: matriz comparativa (§1) e relatório qualitativo (§2). Faixas aproximadas, sem fórmulas, sem indicar o ano de cada valor. Usada como referência qualitativa e confrontada com os PDFs.",
   },
   {
     id: "DOC-ESPECIFICACAO",
@@ -36,6 +36,6 @@ export const SOURCE_DOCUMENTS: SourceDocument[] = [
     kind: "ESPECIFICACAO",
     availableInRepo: true,
     description:
-      "Especificação do projeto contendo amostras de séries horárias transcritas do PDF de fluxos. Fonte intermediária: valores devem ser conferidos com o PDF original.",
+      "Especificação do projeto. Suas amostras de séries foram conferidas com o PDF: a de 01/03/2023 confere; a de 03/2019 é da pista lateral (não central). Não é usada como fonte de dados.",
   },
 ];

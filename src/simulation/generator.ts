@@ -45,7 +45,7 @@ export function mulberry32(seed: number) {
 }
 
 /** Perfil relativo (0..1) por hora a partir das janelas da §2.A do tipo de dia. */
-export function hourlyShape(dayType: Exclude<DayType, "DESCONHECIDO">, segmentPeaks: Measurement[]): number[] {
+export function hourlyShape(dayType: Exclude<DayType, "DESCONHECIDO" | "FERIADO">, segmentPeaks: Measurement[]): number[] {
   const p = SIMULATION_PARAMS;
   const shape = Array.from({ length: 24 }, (_, h) => (h >= 1 && h < 5 ? p.overnightShare : h === 0 || h === 5 ? p.overnightShare * 2 : h >= 22 ? p.offPeakShare * 0.5 : p.offPeakShare));
   if (dayType === "DIA_UTIL" && segmentPeaks.length) {
@@ -64,7 +64,7 @@ export interface SimulationInput {
   measurements: Measurement[];
   seed: number;
   scenario: ScenarioId;
-  dayType: Exclude<DayType, "DESCONHECIDO">;
+  dayType: Exclude<DayType, "DESCONHECIDO" | "FERIADO">;
 }
 
 export function simulateDay({ segment, measurements, seed, scenario, dayType }: SimulationInput) {

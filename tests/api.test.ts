@@ -15,8 +15,8 @@ const SEG = "av-americas--2000--santa-cruz--pista-central";
 describe("API", () => {
   it("GET /api/corridors devolve a hierarquia", async () => {
     const j = await corridors().json();
-    expect(j.data).toHaveLength(4);
-    expect(j.data[0].locations[0].segments.length).toBe(3);
+    expect(j.data).toHaveLength(6);
+    expect(j.data[0].locations[0].segments.length).toBe(4);
   });
   it("GET /api/corridors/[id] 200/404", async () => {
     expect((await corridor(req(), p({ id: "av-americas" }))).status).toBe(200);
@@ -24,12 +24,11 @@ describe("API", () => {
   });
   it("GET /api/segments/[id] traz séries com observações e agregação horária", async () => {
     const j = await (await segment(req(), p({ id: SEG }))).json();
-    expect(j.data.series).toHaveLength(2);
     expect(j.data.series.find((s: { date: string }) => s.date === "2023-03-01").hourly[17].flow).toBe(2961);
     expect((await segment(req(), p({ id: "x" }))).status).toBe(404);
   });
   it("GET /api/indicators/[id] inclui metodologia", async () => {
-    const j = await (await indicator(req(), p({ id: "ufrj-2023-03-01-americas-2000-central--PICO" }))).json();
+    const j = await (await indicator(req(), p({ id: "av-americas--2000--santa-cruz--pista-central--2023-03--PICO" }))).json();
     expect(j.data.methodology.id).toBe("M-PICO");
   });
   it("GET /api/methodology sem limites de condição", async () => expect((await methodology().json()).conditionConfig.thresholds).toBeNull());

@@ -30,6 +30,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 | M-CONDICAO | Condição operacional (NORMAL → ATENÇÃO → CRÍTICO → CONGESTIONADO) | INTERPRETACAO | PENDENTE |
 | M-CV-CONTAGEM | Contagem por linha virtual (visão computacional) | DADO | EXPERIMENTAL |
 | M-CV-ESTABILIZACAO | Estabilização de vídeo e janela válida | HIPOTESE | EXPERIMENTAL |
+| M-INTENSIDADE-RELATIVA | Intensidade relativa ao histórico do local (barras do painel) | HIPOTESE | EXPERIMENTAL |
 
 ## Dados
 
@@ -42,10 +43,10 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Variáveis:** `n_i` Veículos no intervalo i [veíc]
 - **Unidade:** veic
 - **Por que existe:** Dado primário que alimenta todos os indicadores temporais.
-- **Fontes:** Fluxos UFRJ-Revisado (1).pdf — Relatórios de fluxo por faixa horária; Especificação MOVA (síntese do autor) — §3, §5
+- **Fontes:** Fiscalização Eletrônica — Relatório 05 (Fluxos UFRJ-Revisado) — Relatórios de fluxo por faixa horária; Especificação MOVA (síntese do autor) — §3, §5
 - **Lacunas:**
-  - Valores disponíveis vêm da transcrição na especificação (2 séries), não do PDF.
-  - A 'faixa' (lane) de cada contagem não foi transcrita: as séries estão no nível da pista.
+  - Tabelas por faixa (lane) existem em parte dos locais; esta versão usa o total das faixas.
+  - Células vazias e zeros são registrados e não preenchidos.
 
 ### M-VELOCIDADE-OBS — Velocidade média e 85º percentil reportados
 
@@ -56,10 +57,10 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Variáveis:** `v̄_i` Velocidade média no intervalo i [km/h]; `V85_i` 85º percentil da velocidade no intervalo i [km/h]
 - **Unidade:** km/h
 - **Por que existe:** Observar como o tráfego se comporta, não só quantos veículos passam (especificação §7–8).
-- **Fontes:** Relatório de velocidades — Velocidade média e 85º percentil; Especificação MOVA (síntese do autor) — §7
+- **Fontes:** Fiscalização Eletrônica — Relatório 06 (Velocidade UFRJ) — Velocidade média e 85º percentil; Especificação MOVA (síntese do autor) — §7
 - **Lacunas:**
-  - Relatório de velocidades não recebido — nenhum valor no sistema.
-  - Não se sabe se V85 é reportado por hora, por dia ou por período.
+  - V85 é impresso por dia; em 2019 o mesmo valor se repete no mês inteiro (provável valor mensal).
+  - Na Linha Vermelha (05/2022) o V85 impresso é menor que a média — dado suspeito.
 
 ### M-MATRIZ — Faixas reportadas na matriz comparativa
 
@@ -104,7 +105,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Fontes:** Parâmetros do Fluxo de Tráfego — 1. Matriz Comparativa; Parâmetros do Fluxo de Tráfego — 2.B Variações semanais, diárias e horárias
 - **Lacunas:**
   - A fonte nomeia o indicador ('Volume Diário Médio') sem definir procedimento (quais dias, quantas semanas, dias incompletos). Média aritmética inferida do nome.
-  - Nenhuma série com 24 h completas disponível: VDM não calculável a partir das séries.
+  - Dias com hora vazia ou zerada e feriados ficam fora — critério do sistema.
 
 ### M-FLUXO-HORARIO — Fluxo horário
 
@@ -115,7 +116,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Variáveis:** `n_i` Contagem no intervalo i [veíc]; `q_h` Fluxo na hora h [veíc/h]
 - **Unidade:** veic/h
 - **Por que existe:** Base das análises de pico e de variação horária.
-- **Fontes:** Fluxos UFRJ-Revisado (1).pdf — Relatórios de fluxo por faixa horária; Parâmetros do Fluxo de Tráfego — 1. Matriz Comparativa
+- **Fontes:** Fiscalização Eletrônica — Relatório 05 (Fluxos UFRJ-Revisado) — Relatórios de fluxo por faixa horária; Parâmetros do Fluxo de Tráfego — 1. Matriz Comparativa
 - **Lacunas:**
   - Exigir 60 min válidos é critério do sistema.
 
@@ -141,7 +142,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Variáveis:** `v̄_i` Velocidade média no intervalo i [km/h]; `n_i` Contagem no intervalo i [veíc]
 - **Unidade:** km/h
 - **Por que existe:** Comparar velocidade e fluxo (especificação §8).
-- **Fontes:** Relatório de velocidades — Velocidade média e 85º percentil; Especificação MOVA (síntese do autor) — §7
+- **Fontes:** Fiscalização Eletrônica — Relatório 06 (Velocidade UFRJ) — Velocidade média e 85º percentil; Especificação MOVA (síntese do autor) — §7
 - **Lacunas:**
   - Agregação não definida na fonte (temporal × espacial; ponderação).
   - Sem dados de velocidade.
@@ -155,7 +156,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Variáveis:** `V85` 85º percentil [km/h]
 - **Unidade:** km/h
 - **Por que existe:** Caracterizar a distribuição de velocidades (especificação §7).
-- **Fontes:** Relatório de velocidades — Velocidade média e 85º percentil; Especificação MOVA (síntese do autor) — §7
+- **Fontes:** Fiscalização Eletrônica — Relatório 06 (Velocidade UFRJ) — Velocidade média e 85º percentil; Especificação MOVA (síntese do autor) — §7
 - **Lacunas:**
   - Sem valores. Agregar V85 de vários intervalos exigiria as velocidades individuais — não implementado.
 
@@ -209,12 +210,12 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Status:** CONFIRMADO · v0.2.0
 - **O que é:** A fonte distingue dias úteis (segunda a sexta), sábados e domingos.
 - **Fórmula na fonte:** não documentada
-- **Implementação:** `dia da semana da data: seg–sex → DIA_UTIL; sáb → SABADO; dom → DOMINGO; sem data → DESCONHECIDO.`
+- **Implementação:** `datas do calendário de feriados/atípicos → FERIADO; seg–sex → DIA_UTIL; sáb → SABADO; dom → DOMINGO; sem data → DESCONHECIDO.`
 - **Unidade:** —
 - **Por que existe:** Evitar tratar todos os dias com o mesmo padrão (especificação §11).
 - **Fontes:** Parâmetros do Fluxo de Tráfego — 2.A Dias e horários de pico; Especificação MOVA (síntese do autor) — §11
 - **Lacunas:**
-  - Feriados não são tratados (não definidos na fonte): um feriado em dia de semana seria classificado como DIA_UTIL.
+  - Calendário de feriados é FONTE EXTERNA (src/data/calendario.ts): Carnaval 2019 e 2022, Cinzas, 1º de maio.
 
 ### M-JANELAS-PICO — Janelas de pico por tipo de dia
 
@@ -333,3 +334,17 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Fonte externa:** FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS — técnica padrão de visão computacional (OpenCV); limites são parâmetros do sistema.
 - **Lacunas:**
   - Em câmeras fixas (caso de uso real) a estabilização é desnecessária.
+
+### M-INTENSIDADE-RELATIVA — Intensidade relativa ao histórico do local (barras do painel)
+
+- **Status:** EXPERIMENTAL · v0.4.0
+- **O que é:** Régua visual do painel: o fluxo da hora dividido pelo maior fluxo horário já registrado no mesmo trecho; a velocidade da hora dividida pela maior velocidade média horária do trecho.
+- **Fórmula na fonte:** não documentada
+- **Implementação:** `I_fluxo = q_h / max(q_h do trecho) ; I_vel = v̄_h / max(v̄_h do trecho). Cor contínua verde→vermelho, sem faixas nem limites.`
+- **Variáveis:** `q_h` Fluxo na hora h do dia exibido [veíc/h]; `max(q_h)` Maior fluxo horário válido do trecho em todos os períodos [veíc/h]
+- **Unidade:** %
+- **Por que existe:** Comunicar visualmente quando o movimento está alto ou baixo para aquele local, sem inventar limites de congestionamento.
+- **Fontes:** nenhuma fonte documental
+- **Fonte externa:** Escolha de visualização do sistema; não é indicador da fonte. O máximo histórico não é a capacidade da via.
+- **Lacunas:**
+  - Será substituída pela condição operacional oficial quando o professor definir indicador-base e limites (M-CONDICAO).

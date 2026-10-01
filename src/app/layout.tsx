@@ -21,16 +21,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <nav className="nav">
               <Link href="/">Painel</Link>
-              <Link href="/corredores">Corredores</Link>
+              <Link href="/como-funciona">Como funciona</Link>
+              <Link href="/dados">Dados</Link>
+              <Link href="/camera/demo">Câmera + YOLO</Link>
+              <div className="nav-sep" />
               <Link href="/metodologia">Metodologia</Link>
               <Link href="/qualidade">Qualidade de dados</Link>
               <Link href="/fontes">Fontes</Link>
-              <div className="nav-sep" />
               <Link href="/simulacao">Simulação</Link>
-              <Link href="/camera">Câmera de teste</Link>
-              <Link href="/camera/demo">Demo YOLO</Link>
+              <Link href="/camera">Contrato da câmera</Link>
             </nav>
-            <div className="side-foot">MVP 0.2 · fontes: UFRJ (trechos), Parâmetros</div>
+            <div className="side-foot">MVP 0.4 · radares 2019–2023</div>
           </aside>
           <div className="main">{children}</div>
         </div>

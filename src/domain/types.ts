@@ -21,7 +21,8 @@ export type ValueOrigin =
 
 export type Unit = "veic/dia" | "veic/h" | "veic" | "km/h" | "%" | "m" | "adimensional";
 
-export type DayType = "DIA_UTIL" | "SABADO" | "DOMINGO" | "DESCONHECIDO";
+/** FERIADO = feriado ou data atípica (calendário externo, ver src/data/calendario.ts). */
+export type DayType = "DIA_UTIL" | "SABADO" | "DOMINGO" | "FERIADO" | "DESCONHECIDO";
 
 export type Carriageway = "CENTRAL" | "LATERAL" | "CENTRAL_E_LATERAL" | "EXCLUSIVA_BRT" | "VIA_EXPRESSA" | "NAO_ESPECIFICADA";
 
@@ -58,6 +59,7 @@ export interface Coordinates {
   lat: number;
   lng: number;
   provenance: "APROXIMADO_FONTE_EXTERNA" | "FONTE_DOCUMENTAL";
+  raw?: string;
   note: string;
 }
 
@@ -143,6 +145,14 @@ export interface TrafficObservation {
 
 export interface Series {
   id: string;
+  /** Total diário impresso no relatório (veíc), quando houver. */
+  reportedDailyTotal?: number | null;
+  /** Velocidade média diária impressa (km/h). */
+  reportedDailyMeanSpeed?: number | null;
+  /** 85º percentil impresso (km/h). */
+  reportedV85?: number | null;
+  /** Observação do calendário quando FERIADO. */
+  dayNote?: string | null;
   segmentId: string;
   source: DataSourceKind;
   label: string;

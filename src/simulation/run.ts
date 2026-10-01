@@ -4,7 +4,7 @@ import type { TrafficRepository } from "@/repository";
 import { SCENARIOS, simulateDay, type ScenarioId } from "./generator";
 
 /** Executa a simulação e passa as observações pelo MESMO motor usado por histórico e câmera. */
-export function runSimulation(r: TrafficRepository, segmentId: string, seed: number, scenario: ScenarioId = "fluxo-alto", dayType: Exclude<DayType, "DESCONHECIDO"> = "DIA_UTIL") {
+export function runSimulation(r: TrafficRepository, segmentId: string, seed: number, scenario: ScenarioId = "fluxo-alto", dayType: Exclude<DayType, "DESCONHECIDO" | "FERIADO"> = "DIA_UTIL") {
   const segment = r.segment(segmentId);
   if (!segment || !SCENARIOS[scenario]) return null;
   const sim = simulateDay({ segment, measurements: r.measurements(segmentId), seed, scenario, dayType });

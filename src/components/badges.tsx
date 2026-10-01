@@ -28,5 +28,5 @@ export function OriginBadge({ origin }: { origin: ValueOrigin }) {
   return <span className={`badge ${cls}`}>{label}</span>;
 }
 
-export const DAY_TYPE_LABEL: Record<DayType, string> = { DIA_UTIL: "Dia útil", SABADO: "Sábado", DOMINGO: "Domingo", DESCONHECIDO: "Tipo de dia desconhecido" };
+export const DAY_TYPE_LABEL: Record<DayType, string> = { DIA_UTIL: "Dia útil", SABADO: "Sábado", DOMINGO: "Domingo", FERIADO: "Feriado / atípico", DESCONHECIDO: "Tipo de dia desconhecido" };
 export const WEEKDAY = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];

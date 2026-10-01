@@ -128,7 +128,7 @@ export function classifyCondition(value: number | null, t: ConditionThresholds |
 }
 
 /** Janelas de pico por tipo de dia — DOC-PARAMETROS §2.A (CONFIRMADO). */
-export const PEAK_WINDOWS: Record<Exclude<DayType, "DESCONHECIDO">, { label: string; startHour: number; endHour: number }[]> = {
+export const PEAK_WINDOWS: Record<Exclude<DayType, "DESCONHECIDO" | "FERIADO">, { label: string; startHour: number; endHour: number }[]> = {
   DIA_UTIL: [
     { label: "Pico da manhã", startHour: 7, endHour: 9 },
     { label: "Pico da tarde/noite", startHour: 17, endHour: 19 },
@@ -141,7 +141,7 @@ export const PEAK_WINDOWS: Record<Exclude<DayType, "DESCONHECIDO">, { label: str
 export function peakVsWindows(hourly: HourlyFlow[], dayType: DayType) {
   const peak = peakHour(hourly);
   if (!peak) return null;
-  if (dayType === "DESCONHECIDO") return { peak, windows: [], insideWindow: null as boolean | null };
+  if (dayType === "DESCONHECIDO" || dayType === "FERIADO") return { peak, windows: [], insideWindow: null as boolean | null };
   const windows = PEAK_WINDOWS[dayType];
   return { peak, windows, insideWindow: windows.some((w) => peak.hour >= w.startHour && peak.hour < w.endHour) };
 }

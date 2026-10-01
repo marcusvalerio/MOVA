@@ -1,6 +1,7 @@
 import type { DayType, Series, TrafficObservation } from "@/domain/types";
 import { RAW_UFRJ_SERIES, type RawHourlySeries } from "@/data/raw/ufrj-series";
 import { classifyRawCell } from "@/quality/cells";
+import { ATYPICAL_DATES } from "@/data/calendario";
 
 /**
  * NORMALIZATION — séries horárias.
@@ -19,11 +20,13 @@ export function parseInterval(s: string): { startTime: string; durationMinutes: 
   return { startTime: `${m[1].padStart(2, "0")}:${m[2] ?? "00"}`, durationMinutes: b - a };
 }
 
-/** M-TIPO-DIA: seg–sex = DIA_UTIL; sáb; dom. Feriados não são tratados (hipótese registrada). */
-export function dayTypeOf(date: string | null): { weekday: number | null; dayType: DayType } {
-  if (!date) return { weekday: null, dayType: "DESCONHECIDO" };
+/** M-TIPO-DIA: seg–sex = DIA_UTIL; sáb; dom; datas do calendário (src/data/calendario.ts) = FERIADO. */
+export function dayTypeOf(date: string | null): { weekday: number | null; dayType: DayType; note: string | null } {
+  if (!date) return { weekday: null, dayType: "DESCONHECIDO", note: null };
   const wd = new Date(`${date}T12:00:00Z`).getUTCDay();
-  return { weekday: wd, dayType: wd === 0 ? "DOMINGO" : wd === 6 ? "SABADO" : "DIA_UTIL" };
+  const note = ATYPICAL_DATES[date] ?? null;
+  if (note) return { weekday: wd, dayType: "FERIADO", note };
+  return { weekday: wd, dayType: wd === 0 ? "DOMINGO" : wd === 6 ? "SABADO" : "DIA_UTIL", note: null };
 }
 
 export function normalizeSeries(raw: RawHourlySeries[], segmentIdByRow: Record<number, string>) {
