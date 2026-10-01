@@ -3,6 +3,8 @@ import { MethodBadge } from "@/components/badges";
 import { METHODOLOGY } from "@/methodology/registry";
 import { SOURCE_DOCUMENTS } from "@/data/sources";
 
+const CATS = [["DADO", "Dados"], ["INDICADOR", "Indicadores"], ["FORMULA", "Fórmulas"], ["REGRA", "Regras"], ["INTERPRETACAO", "Interpretações"], ["HIPOTESE", "Hipóteses"]] as const;
+
 export default function MethodologyPage() {
   const docTitle = (id: string) => SOURCE_DOCUMENTS.find((d) => d.id === id)?.title ?? id;
   return (
@@ -10,11 +12,13 @@ export default function MethodologyPage() {
       <Topbar title="Metodologia" sub="Como cada número é produzido · fonte, fórmula, variáveis, status" />
       <div className="content">
         <div className="banner">
-          <strong>O documento-fonte disponível não contém nenhuma fórmula explícita.</strong> Valores históricos são transcritos (observados na fonte).
-          Cálculos que o sistema faz sem definição documental estão marcados <em>Pendente de validação</em> ou <em>Experimental</em>, com a lacuna descrita.
+          <strong>Nenhuma fonte disponível contém fórmula matemática explícita.</strong> Status: <em>Confirmado</em> = explícito na fonte · <em>Inferência</em> = implícito, dedução explicada ·
+          <em> Experimental</em> = escolha do sistema · <em>Pendente</em> = pendente de validação com o professor.
         </div>
-        <section className="panel">
-          {METHODOLOGY.map((m) => (
+        {CATS.map(([cat, title]) => (
+        <section key={cat} className="panel">
+          <h2>{title}</h2>
+          {METHODOLOGY.filter((m) => m.category === cat).map((m) => (
             <article key={m.id} id={m.id} className="method">
               <div>
                 <div className="mono small muted">{m.id} · v{m.version}</div>
@@ -49,6 +53,7 @@ export default function MethodologyPage() {
             </article>
           ))}
         </section>
+        ))}
       </div>
     </>
   );

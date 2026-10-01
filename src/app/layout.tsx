@@ -21,14 +21,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <nav className="nav">
               <Link href="/">Painel</Link>
+              <Link href="/corredores">Corredores</Link>
               <Link href="/metodologia">Metodologia</Link>
               <Link href="/qualidade">Qualidade de dados</Link>
               <Link href="/fontes">Fontes</Link>
               <div className="nav-sep" />
               <Link href="/simulacao">Simulação</Link>
-              <Link href="/camera">Câmera</Link>
+              <Link href="/camera">Câmera de teste</Link>
             </nav>
-            <div className="side-foot">MVP 0.1 · dados: DOC-PARAMETROS</div>
+            <div className="side-foot">MVP 0.2 · fontes: UFRJ (trechos), Parâmetros</div>
           </aside>
           <div className="main">{children}</div>
         </div>

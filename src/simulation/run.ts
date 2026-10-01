@@ -1,29 +1,24 @@
-import { aggregateHourly, dailyVolume, overnightRatio, peakHour, weightedMeanSpeed } from "@/engine/series";
+import type { DayType } from "@/domain/types";
+import { aggregateHourly, dailyVolume, overnightRatio, peakHour, peakVsWindows, weightedMeanSpeed } from "@/engine/series";
 import type { TrafficRepository } from "@/repository";
-import { simulateDay } from "./generator";
+import { SCENARIOS, simulateDay, type ScenarioId } from "./generator";
 
-/** Executa a simulação e passa as observações pelo MESMO motor usado por câmera/histórico. */
-export function runSimulation(r: TrafficRepository, approachId: string, seed: number) {
-  const a = r.approach(approachId);
-  if (!a) return null;
-  const ms = r.measurements(approachId);
-  const sim = simulateDay(a, ms, seed);
+/** Executa a simulação e passa as observações pelo MESMO motor usado por histórico e câmera. */
+export function runSimulation(r: TrafficRepository, segmentId: string, seed: number, scenario: ScenarioId = "fluxo-alto", dayType: Exclude<DayType, "DESCONHECIDO"> = "DIA_UTIL") {
+  const segment = r.segment(segmentId);
+  if (!segment || !SCENARIOS[scenario]) return null;
+  const sim = simulateDay({ segment, measurements: r.measurements(segmentId), seed, scenario, dayType });
   const hourly = aggregateHourly(sim.observations);
-  const vdm = ms.find((m) => m.metric === "VDM_DIAS_UTEIS")?.value ?? null;
-  const daily = dailyVolume(hourly);
   return {
-    approach: a,
-    seed,
-    date: sim.date,
-    targetPeakFlow: sim.targetPeakFlow,
+    segment, seed, scenario, dayType,
+    peakFlowTarget: sim.peakFlowTarget,
+    weekendFactor: sim.weekendFactor,
     observationCount: sim.observations.length,
     hourly,
-    daily,
+    daily: dailyVolume(hourly),
     peak: peakHour(hourly),
+    peakWindows: peakVsWindows(hourly, dayType),
     meanSpeed: weightedMeanSpeed(hourly),
     overnight: overnightRatio(hourly),
-    /** Comparação com a faixa da fonte — verificação da própria simulação. */
-    dailyWithinSourceVdm: vdm && daily != null ? daily >= vdm.min && daily <= vdm.max : null,
-    sourceVdm: vdm,
   };
 }

@@ -3,95 +3,120 @@ import { repo } from "@/repository";
 import { Topbar } from "@/components/Topbar";
 import { ConditionScale } from "@/components/ConditionScale";
 import { SchematicMap } from "@/components/SchematicMap";
-import { RangeChart, type RangeRow } from "@/components/charts";
-import { QualityBadge } from "@/components/badges";
-import { METHODOLOGY } from "@/methodology/registry";
+import { HourlyChart, RangeChart, type RangeRow } from "@/components/charts";
+import { DAY_TYPE_LABEL, QualityBadge } from "@/components/badges";
+import { SERIES_COLORS, segmentTitle, seriesValues } from "@/components/viewmodels";
 import { CONDITION_CONFIG } from "@/methodology/condition-config";
+import { comparability } from "@/engine/compare";
+import { PEAK_WINDOWS } from "@/engine/series";
 import { formatRange } from "@/normalization/parse";
 import type { Measurement, QualityStatus } from "@/domain/types";
 
 export default function Dashboard() {
   const r = repo();
-  const corridors = r.corridors();
-  const approaches = r.approaches();
+  const segments = r.segments();
   const ms = r.measurements();
   const issues = r.qualityIssues();
+  const series = r.series();
+  const inds = r.indicators();
 
   const by = (metric: Measurement["metric"]) => ms.filter((m) => m.metric === metric && m.value);
-  const topBy = (metric: Measurement["metric"]) => by(metric).reduce((a, b) => (b.value!.max > a.value!.max ? b : a));
-  const topVdm = topBy("VDM_DIAS_UTEIS");
+  const topVdm = by("VDM_DIAS_UTEIS").reduce((a, b) => (b.value!.max > a.value!.max ? b : a));
   const peaks = [...by("PICO_MANHA"), ...by("PICO_TARDE_NOITE")];
   const topPeak = peaks.reduce((a, b) => (b.value!.max > a.value!.max ? b : a));
-  const nameOf = (approachId: string) => {
-    const a = r.approach(approachId)!;
-    return `${r.corridor(a.corridorId)!.name} · ${a.label}`;
-  };
-  const statusCount = (s: string) => METHODOLOGY.filter((m) => m.status === s).length;
+  const seriesPeaks = inds.filter((i) => i.key === "pico-serie");
+  const topObserved = seriesPeaks.reduce((a, b) => (b.value!.max > a.value!.max ? b : a), seriesPeaks[0]);
+  const origins = (o: string) => inds.filter((i) => i.origin === o).length;
 
-  const peakByCorridor: Record<string, string> = {};
-  for (const c of corridors) {
-    const p = peaks.filter((m) => c.approachIds.includes(m.approachId));
-    if (p.length) peakByCorridor[c.id] = `até ~${Math.max(...p.map((m) => m.value!.max)).toLocaleString("pt-BR")} veíc/h`;
+  const peakByLocation: Record<string, string> = {};
+  for (const l of r.locations()) {
+    const p = peaks.filter((m) => l.segmentIds.includes(m.segmentId));
+    if (p.length) peakByLocation[l.id] = `pico até ~${Math.max(...p.map((m) => m.value!.max)).toLocaleString("pt-BR")} veíc/h`;
   }
 
-  // Aproximações BRT ficam em gráfico próprio: escala ~100× menor que as faixas mistas.
-  const isBrt = (id: string) => /BRT/i.test(r.approach(id)!.lanesRaw) && r.approach(id)!.laneCount === 1;
-  const rows: RangeRow[] = approaches.map((a) => ({
-    id: a.id,
-    label: r.corridor(a.corridorId)!.name,
-    sub: a.label,
+  const rows: RangeRow[] = segments.map((s) => ({
+    id: s.id,
+    label: r.location(s.locationId)!.address,
+    sub: s.label,
     series: (["PICO_MANHA", "PICO_TARDE_NOITE"] as const).flatMap((metric) => {
-      const m = ms.find((x) => x.approachId === a.id && x.metric === metric);
+      const m = ms.find((x) => x.segmentId === s.id && x.metric === metric);
       return m?.value ? [{ key: metric, min: m.value.min, max: m.value.max, window: m.windows.map((w) => `${w.start}–${w.end}`).join(" / ") }] : [];
     }),
   }));
-  const qualityCounts = (["VALIDO", "SUSPEITO", "AUSENTE", "INCOMPLETO", "INVALIDO"] as QualityStatus[]).map((s) => [s, issues.filter((i) => i.status === s).length] as const);
-  const cellsWithIssues = new Set(issues.filter((i) => i.target.kind === "measurement").map((i) => i.target.id)).size;
+  const isBrt = (id: string) => r.segment(id)!.laneType === "BRT";
+
+  const featured = series.filter((s) => s.segmentId === series[0]?.segmentId).sort((a, b) => (b.month ?? "").localeCompare(a.month ?? ""));
+  const comp = featured.length > 1 ? comparability({ ...featured[0], label: featured[0].label }, { ...featured[1], label: featured[1].label }) : null;
+  const qualityCounts = (["SUSPEITO", "INCOMPLETO", "AUSENTE", "INVALIDO"] as QualityStatus[]).map((s) => [s, issues.filter((i) => i.status === s).length] as const);
 
   return (
     <>
-      <Topbar title="Painel operacional" sub="Corredores do Rio de Janeiro · valores reportados em faixas aproximadas" source="HISTORICO" />
+      <Topbar title="Painel operacional" sub="Corredores do Rio de Janeiro · dados do estudo (UFRJ / Parâmetros do Fluxo de Tráfego)" source="HISTORICO" />
       <div className="content">
         <section className="kpis" aria-label="Indicadores principais">
-          <div className="kpi">
-            <div className="kpi-label">Corredores</div>
-            <div className="kpi-value">{corridors.length}</div>
-            <div className="kpi-note">{approaches.length} sentidos/pistas na matriz</div>
-          </div>
+          {topObserved && (
+            <Link className="kpi" href={`/rastreio/${encodeURIComponent(topObserved.id)}`}>
+              <div className="kpi-label">Fluxo horário máx. observado</div>
+              <div className="kpi-value">{topObserved.value!.max.toLocaleString("pt-BR")}</div>
+              <div className="kpi-note">veíc/h · {topObserved.display.split("·")[1]?.trim()} · {topObserved.period.split("·")[0]}</div>
+            </Link>
+          )}
+          <Link className="kpi" href={`/rastreio/${encodeURIComponent(`${segments[0].id}--VELOCIDADE`)}`}>
+            <div className="kpi-label">Velocidade média</div>
+            <div className="kpi-value muted">Sem dado</div>
+            <div className="kpi-note">relatório de velocidades não incorporado</div>
+          </Link>
           <Link className="kpi" href={`/rastreio/${encodeURIComponent(topVdm.id)}`}>
             <div className="kpi-label">Maior VDM reportado</div>
             <div className="kpi-value">{formatRange(topVdm.value, null)}</div>
-            <div className="kpi-note">veíc/dia · {r.corridor(r.approach(topVdm.approachId)!.corridorId)!.name}</div>
+            <div className="kpi-note">veíc/dia · {segmentTitle(r, topVdm.segmentId).corridor} (matriz)</div>
           </Link>
           <Link className="kpi" href={`/rastreio/${encodeURIComponent(topPeak.id)}`}>
             <div className="kpi-label">Maior pico reportado</div>
             <div className="kpi-value">{formatRange(topPeak.value, null)}</div>
-            <div className="kpi-note">veíc/h · {topPeak.windows.map((w) => `${w.start}–${w.end}`).join(" / ")}</div>
-          </Link>
-          <Link className="kpi" href={`/rastreio/${encodeURIComponent(`${approaches[0].id}--VELOCIDADE`)}`}>
-            <div className="kpi-label">Velocidade média</div>
-            <div className="kpi-value muted">Sem dado</div>
-            <div className="kpi-note">não discriminada na fonte</div>
+            <div className="kpi-note">veíc/h · {topPeak.windows.map((w) => `${w.start}–${w.end}`).join(" / ")} · {segmentTitle(r, topPeak.segmentId).corridor}</div>
           </Link>
           <Link className="kpi" href="/metodologia">
-            <div className="kpi-label">Metodologias</div>
-            <div className="kpi-value">{METHODOLOGY.length}</div>
-            <div className="kpi-note">{statusCount("CONFIRMADO")} confirmada · {statusCount("EXPERIMENTAL")} exp. · {statusCount("PENDENTE")} pend.</div>
+            <div className="kpi-label">Indicadores</div>
+            <div className="kpi-value">{inds.length}</div>
+            <div className="kpi-note">{origins("OBSERVADO")} observados · {origins("CALCULADO")} calculados · {origins("INDISPONIVEL")} sem dado</div>
           </Link>
-          <Link className="kpi" href={`/rastreio/${encodeURIComponent(`${approaches[0].id}--CONDICAO`)}`}>
+          <Link className="kpi" href={`/rastreio/${encodeURIComponent(`${segments[0].id}--CONDICAO`)}`}>
             <div className="kpi-label">Condição operacional</div>
-            <div className="kpi-value muted">Indeterminada</div>
-            <div className="kpi-note">limites não definidos</div>
+            <div className="kpi-value muted">Não classificada</div>
+            <div className="kpi-note">limites pendentes de validação</div>
           </Link>
         </section>
+
+        {featured.length > 0 && (
+          <section className="panel">
+            <div className="panel-head">
+              <div>
+                <h2>Fluxo por hora — séries observadas</h2>
+                <div className="small muted">{segmentTitle(r, featured[0].segmentId).full}</div>
+              </div>
+              <Link className="link small" href={`/segmentos/${encodeURIComponent(featured[0].segmentId)}`}>abrir segmento →</Link>
+            </div>
+            <HourlyChart
+              unit="veíc/h"
+              label="Fluxo horário observado"
+              windows={PEAK_WINDOWS.DIA_UTIL.map((w) => ({ ...w, label: w.label }))}
+              series={featured.slice(0, 2).map((s, i) => ({ label: `${s.label} · ${DAY_TYPE_LABEL[s.dayType]}`, values: seriesValues(r, s), color: SERIES_COLORS[i], dashed: i === 1 }))}
+            />
+            {comp && !comp.comparable && (
+              <p className="small" style={{ marginTop: 8, color: "var(--serious)" }}>Comparação com ressalva (M-COMPARACAO): {comp.warnings.join(" ")}</p>
+            )}
+            <p className="small muted" style={{ marginTop: 4 }}>Horas sem dado aparecem como lacuna (não interpoladas). Valores transcritos na especificação a partir do PDF de fluxos — conferir com o original.</p>
+          </section>
+        )}
 
         <div className="grid-2">
           <section className="panel">
             <div className="panel-head">
-              <h2>Corredores</h2>
-              <span className="small muted">clique para detalhar</span>
+              <h2>Locais de medição</h2>
+              <Link className="link small" href="/corredores">todos os corredores</Link>
             </div>
-            <SchematicMap corridors={corridors} peakByCorridor={peakByCorridor} />
+            <SchematicMap locations={r.locations()} peakByLocation={peakByLocation} />
           </section>
           <section className="panel">
             <div className="panel-head">
@@ -99,9 +124,8 @@ export default function Dashboard() {
               <Link className="link small" href="/metodologia#M-CONDICAO">metodologia</Link>
             </div>
             <ConditionScale thresholds={CONDITION_CONFIG.thresholds} active="INDETERMINADO" />
-            <p className="small" style={{ marginTop: 16, color: "var(--text-2)" }}>
-              A fonte traz apenas avaliações qualitativas (ex.: Linha Vermelha &ldquo;frequentemente atingindo o Nível de Serviço E/F nos gargalos de acesso&rdquo;).
-              Elas aparecem na página de cada corredor como citação, sem serem convertidas em nível da escala.
+            <p className="small" style={{ marginTop: 12, color: "var(--text-2)" }}>
+              As avaliações da fonte (ex.: Linha Vermelha &ldquo;Nível de Serviço E/F nos gargalos de acesso&rdquo;; Jardim Botânico &ldquo;rapidamente ao estado de saturação&rdquo;) aparecem como citação nos segmentos — não são convertidas em nível.
             </p>
             <div style={{ borderTop: "1px solid var(--border)", marginTop: 16, paddingTop: 14 }}>
               <div className="panel-head" style={{ marginBottom: 8 }}>
@@ -110,20 +134,18 @@ export default function Dashboard() {
               </div>
               <div className="row">
                 {qualityCounts.filter(([, n]) => n > 0).map(([s, n]) => (
-                  <span key={s} className="row" style={{ gap: 6, marginRight: 10 }}>
-                    <QualityBadge status={s} /> <span className="mono">{n}</span>
-                  </span>
+                  <span key={s} className="row" style={{ gap: 6, marginRight: 10 }}><QualityBadge status={s} /> <span className="mono">{n}</span></span>
                 ))}
               </div>
-              <p className="small muted" style={{ marginTop: 8 }}>{cellsWithIssues} de {ms.length} células numéricas têm ao menos um registro. Nenhum valor foi corrigido.</p>
+              <p className="small muted" style={{ marginTop: 8 }}>Nenhum valor foi corrigido ou preenchido automaticamente.</p>
             </div>
           </section>
         </div>
 
         <section className="panel">
           <div className="panel-head">
-            <h2>Fluxo de pico reportado — tráfego misto</h2>
-            <span className="small muted">faixa mín–máx da fonte · veíc/h · passe o cursor para ver a janela</span>
+            <h2>Fluxo de pico reportado — faixas mistas</h2>
+            <span className="small muted">faixa mín–máx da matriz (§1) · veíc/h</span>
           </div>
           <RangeChart rows={rows.filter((x) => !isBrt(x.id))} unit="veíc/h" seriesLabels={{ PICO_MANHA: "Pico manhã", PICO_TARDE_NOITE: "Pico tarde/noite" }} />
         </section>
@@ -131,65 +153,20 @@ export default function Dashboard() {
         <div className="grid-2">
           <section className="panel">
             <div className="panel-head">
-              <h2>Fluxo de pico reportado — BRT</h2>
-              <span className="small muted">escala própria (≈100× menor)</span>
+              <h2>Fluxo de pico reportado — faixa exclusiva BRT</h2>
+              <span className="small muted">escala própria</span>
             </div>
             <RangeChart rows={rows.filter((x) => isBrt(x.id))} unit="veíc/h" seriesLabels={{ PICO_MANHA: "Pico manhã", PICO_TARDE_NOITE: "Pico tarde/noite" }} />
+            <p className="small muted" style={{ marginTop: 8 }}>Ônibus/articulados: não comparar diretamente com faixas mistas (§2.C — maior transporte de passageiros por veículo).</p>
           </section>
           <section className="panel">
-            <div className="panel-head">
-              <h2>Séries horárias e velocidade</h2>
-            </div>
+            <div className="panel-head"><h2>Velocidade por hora</h2></div>
             <p style={{ color: "var(--text-2)" }}>
-              A fonte disponível não contém séries hora a hora nem valores de velocidade — apenas janelas de pico e faixas. Os gráficos de fluxo e velocidade por hora
-              ficam disponíveis no <Link className="link" href="/simulacao">modo Simulação</Link> (claramente identificado) até que os relatórios primários sejam incorporados.
+              Sem dados. O relatório de velocidades (velocidade média por horário e 85º percentil) ainda não foi incorporado. O modelo já suporta esses campos; a comparação fluxo × velocidade será exibida lado a lado, sem classificação automática.
             </p>
+            <Link className="link small" href="/simulacao?scenario=velocidade-baixa">ver comportamento no modo Simulação →</Link>
           </section>
         </div>
-
-        <section className="panel">
-          <div className="panel-head">
-            <h2>Matriz de corredores</h2>
-            <span className="small muted">valores literais da fonte (Seção 1)</span>
-          </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Corredor</th>
-                  <th>Sentido / pista</th>
-                  <th>VDM dias úteis</th>
-                  <th>Fim de semana</th>
-                  <th>Pico manhã</th>
-                  <th>Pico tarde/noite</th>
-                </tr>
-              </thead>
-              <tbody>
-                {approaches.map((a) => {
-                  const cell = (metric: Measurement["metric"]) => {
-                    const m = ms.find((x) => x.approachId === a.id && x.metric === metric)!;
-                    return (
-                      <td className="num">
-                        <Link className="link" href={`/rastreio/${encodeURIComponent(m.id)}`}>{m.raw}</Link>
-                      </td>
-                    );
-                  };
-                  return (
-                    <tr key={a.id}>
-                      <td><Link className="link" href={`/corredores/${a.corridorId}`}>{r.corridor(a.corridorId)!.name}</Link></td>
-                      <td>{a.label}</td>
-                      {cell("VDM_DIAS_UTEIS")}
-                      {cell("VOLUME_FIM_DE_SEMANA")}
-                      {cell("PICO_MANHA")}
-                      {cell("PICO_TARDE_NOITE")}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="small muted" style={{ marginTop: 10 }}>&ldquo;veg&rdquo; reproduzido como na fonte; interpretado como veículos (registro de qualidade UNIDADE_GRAFIA). Maior VDM: {nameOf(topVdm.approachId)}.</p>
-        </section>
       </div>
     </>
   );

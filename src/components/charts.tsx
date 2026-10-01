@@ -71,50 +71,83 @@ export function RangeChart({ rows, seriesLabels, unit }: { rows: RangeRow[]; ser
   );
 }
 
-/** Série horária (uma série por gráfico; sem eixo duplo). */
-export function HourlyChart({
-  values,
-  unit,
-  band,
-  color = "var(--sim)",
-  label,
-}: {
-  values: (number | null)[];
-  unit: string;
-  band?: { min: number; max: number; label: string } | null;
-  color?: string;
+export interface HourlySeries {
   label: string;
+  values: (number | null)[];
+  color: string;
+  dashed?: boolean;
+}
+
+/**
+ * Série(s) horária(s) num único eixo (nunca eixo duplo). Horas sem dado ficam como lacuna
+ * — nunca interpoladas. Faixas verticais marcam janelas de pico da fonte.
+ */
+export function HourlyChart({
+  series,
+  unit,
+  label,
+  windows = [],
+  band,
+}: {
+  series: HourlySeries[];
+  unit: string;
+  label: string;
+  windows?: { label: string; startHour: number; endHour: number }[];
+  band?: { min: number; max: number; label: string } | null;
 }) {
   const [hover, setHover] = useState<number | null>(null);
-  const W = 720, H = 220, L = 52, R = 12, T = 10, B = 26;
-  const vmax = niceMax(Math.max(1, ...values.filter((v): v is number => v != null), band?.max ?? 0));
-  const x = (h: number) => L + (h / 23) * (W - L - R);
+  const W = 720, H = 240, L = 52, R = 12, T = 22, B = 26;
+  const all = series.flatMap((s) => s.values).filter((v): v is number => v != null);
+  const vmax = niceMax(Math.max(1, ...all, band?.max ?? 0));
+  // Eixo x por início da hora (0..24): a hora h ocupa [h, h+1); ponto no centro.
+  const x = (h: number) => L + (h / 24) * (W - L - R);
   const y = (v: number) => T + (1 - v / vmax) * (H - T - B);
-  const path = values
-    .map((v, h) => (v == null ? null : `${x(h)},${y(v)}`))
-    .reduce<string[]>((acc, p, i) => {
-      if (p == null) return acc;
-      acc.push(`${i === 0 || values[i - 1] == null ? "M" : "L"}${p}`);
-      return acc;
-    }, [])
-    .join(" ");
+  const path = (vals: (number | null)[]) => {
+    let d = "";
+    vals.forEach((v, h) => {
+      if (v == null) return;
+      d += `${h === 0 || vals[h - 1] == null ? "M" : "L"}${x(h + 0.5)},${y(v)} `;
+    });
+    return d;
+  };
   const ticks = Array.from({ length: 5 }, (_, i) => (vmax / 4) * i);
   return (
     <div style={{ position: "relative" }}>
+      {(series.length > 1 || windows.length > 0) && (
+        <div className="row small" style={{ marginBottom: 6 }}>
+          {series.map((s) => (
+            <span key={s.label} className="row" style={{ gap: 6, marginRight: 12 }}>
+              <svg width="18" height="6" aria-hidden><line x1="0" x2="18" y1="3" y2="3" stroke={s.color} strokeWidth="2" strokeDasharray={s.dashed ? "4 3" : undefined} /></svg>
+              {s.label}
+            </span>
+          ))}
+          {windows.length > 0 && (
+            <span className="row" style={{ gap: 6 }}>
+              <i style={{ width: 12, height: 10, background: "var(--text)", opacity: 0.08, display: "inline-block", borderRadius: 2 }} /> janelas de pico (§2.A)
+            </span>
+          )}
+        </div>
+      )}
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={label}
         onMouseMove={(e) => {
           const b = e.currentTarget.getBoundingClientRect();
           const px = ((e.clientX - b.left) / b.width) * W;
-          setHover(Math.max(0, Math.min(23, Math.round(((px - L) / (W - L - R)) * 23))));
+          setHover(Math.max(0, Math.min(23, Math.floor(((px - L) / (W - L - R)) * 24))));
         }}
         onMouseLeave={() => setHover(null)}>
+        {windows.map((w) => (
+          <g key={w.label}>
+            <rect x={x(w.startHour)} width={x(w.endHour) - x(w.startHour)} y={T} height={H - T - B} fill="var(--text)" opacity={0.06} />
+            <text x={x(w.startHour) + 3} y={T - 6} fontSize="10" fill="var(--text-3)">{w.label}</text>
+          </g>
+        ))}
         {ticks.map((t) => (
           <g key={t}>
             <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--grid)" />
             <text x={L - 8} y={y(t) + 4} fontSize="10.5" textAnchor="end" fill="var(--text-3)" fontFamily="var(--mono)">{fmt(t)}</text>
           </g>
         ))}
-        {[0, 3, 6, 9, 12, 15, 18, 21, 23].map((h) => (
+        {[0, 3, 6, 9, 12, 15, 18, 21, 24].map((h) => (
           <text key={h} x={x(h)} y={H - 8} fontSize="10.5" textAnchor="middle" fill="var(--text-3)" fontFamily="var(--mono)">{String(h).padStart(2, "0")}h</text>
         ))}
         {band && (
@@ -123,17 +156,25 @@ export function HourlyChart({
             <text x={W - R - 4} y={y(band.max) - 4} fontSize="10.5" textAnchor="end" fill="var(--text-2)">{band.label}</text>
           </g>
         )}
-        <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
-        {hover != null && values[hover] != null && (
+        {series.map((s) => (
+          <g key={s.label}>
+            <path d={path(s.values)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeDasharray={s.dashed ? "5 4" : undefined} />
+            {s.values.map((v, h) => (v != null && (h === 0 || s.values[h - 1] == null) && (h === 23 || s.values[h + 1] == null) ? <circle key={h} cx={x(h + 0.5)} cy={y(v)} r={3} fill={s.color} /> : null))}
+          </g>
+        ))}
+        {hover != null && (
           <g pointerEvents="none">
-            <line x1={x(hover)} x2={x(hover)} y1={T} y2={H - B} stroke="var(--border-strong)" />
-            <circle cx={x(hover)} cy={y(values[hover] as number)} r={4.5} fill={color} stroke="var(--surface)" strokeWidth={2} />
+            <line x1={x(hover + 0.5)} x2={x(hover + 0.5)} y1={T} y2={H - B} stroke="var(--border-strong)" />
+            {series.map((s) => (s.values[hover] != null ? <circle key={s.label} cx={x(hover + 0.5)} cy={y(s.values[hover] as number)} r={4.5} fill={s.color} stroke="var(--surface)" strokeWidth={2} /> : null))}
           </g>
         )}
       </svg>
       {hover != null && (
-        <div className="chart-tip" style={{ left: `${(x(hover) / W) * 100}%`, top: 0, transform: hover > 16 ? "translateX(-110%)" : "translateX(10px)" }}>
-          {String(hover).padStart(2, "0")}:00 · {values[hover] == null ? "incompleto" : `${fmt(values[hover] as number)} ${unit}`}
+        <div className="chart-tip" style={{ left: `${(x(hover + 0.5) / W) * 100}%`, top: 24, transform: hover > 15 ? "translateX(-108%)" : "translateX(10px)" }}>
+          <div>{String(hover).padStart(2, "0")}h–{String(hover + 1).padStart(2, "0")}h</div>
+          {series.map((s) => (
+            <div key={s.label}>{s.label}: {s.values[hover] == null ? "sem dado" : `${fmt(s.values[hover] as number)} ${unit}`}</div>
+          ))}
         </div>
       )}
     </div>

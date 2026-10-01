@@ -1,13 +1,13 @@
-import type { DataSourceKind, MethodStatus, QualityStatus, ValueOrigin } from "@/domain/types";
+import type { DataSourceKind, DayType, MethodStatus, QualityStatus, ValueOrigin } from "@/domain/types";
 
 export function SourceBadge({ kind }: { kind: DataSourceKind }) {
-  const map = { HISTORICO: ["Histórico", "b-hist"], SIMULACAO: ["Simulação", "b-sim"], CAMERA: ["Câmera — não conectada", "b-cam"] } as const;
+  const map = { HISTORICO: ["Histórico", "b-hist"], SIMULACAO: ["Simulação", "b-sim"], CAMERA_TESTE: ["Câmera de teste", "b-cam"] } as const;
   const [label, cls] = map[kind];
   return <span className={`badge ${cls}`}>{label}</span>;
 }
 
 export function MethodBadge({ status }: { status: MethodStatus }) {
-  const label = { CONFIRMADO: "Confirmado", PENDENTE: "Pendente de validação", EXPERIMENTAL: "Experimental" }[status];
+  const label = { CONFIRMADO: "Confirmado", INFERIDO: "Inferência", EXPERIMENTAL: "Experimental", PENDENTE: "Pendente de validação" }[status];
   return <span className={`badge b-${status.toLowerCase()}`}>{label}</span>;
 }
 
@@ -18,11 +18,15 @@ export function QualityBadge({ status }: { status: QualityStatus }) {
 
 export function OriginBadge({ origin }: { origin: ValueOrigin }) {
   const map = {
-    OBSERVADO_NA_FONTE: ["Observado na fonte", "b-obs"],
-    CALCULADO: ["Calculado pelo sistema", "b-calc"],
+    OBSERVADO: ["Observado", "b-obs"],
+    CALCULADO: ["Calculado", "b-calc"],
+    INTERPRETADO: ["Interpretado", "b-interp"],
     SIMULADO: ["Simulado", "b-sim"],
     INDISPONIVEL: ["Indisponível", "b-ind"],
   } as const;
   const [label, cls] = map[origin];
   return <span className={`badge ${cls}`}>{label}</span>;
 }
+
+export const DAY_TYPE_LABEL: Record<DayType, string> = { DIA_UTIL: "Dia útil", SABADO: "Sábado", DOMINGO: "Domingo", DESCONHECIDO: "Tipo de dia desconhecido" };
+export const WEEKDAY = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];

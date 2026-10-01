@@ -1,29 +1,37 @@
-import type { Approach, Measurement, TrafficObservation } from "@/domain/types";
+import type { DayType, Measurement, RoadSegment, TrafficObservation } from "@/domain/types";
+import { PEAK_WINDOWS } from "@/engine/series";
 import { validateObservation } from "@/quality/rules";
 
 /**
- * SIMULAÇÃO — gera observações sintéticas de 15 min para testar o motor.
+ * SIMULAÇÃO — observações sintéticas de 15 min para testar o motor. NÃO é dado real.
  *
- * NÃO é dado real. Fontes de cada escolha:
- *  - janelas de pico e faixa de fluxo de pico: matriz da fonte (Seção 1), por aproximação;
- *  - madrugada baixa e crescimento abrupto a partir das 06:00: regra descritiva da Seção 2.B;
- *  - todos os demais parâmetros (formato da curva, nível do entrepico, ruído, velocidades)
- *    são ARBITRÁRIOS e servem apenas para exercitar o sistema.
+ * Vem das fontes:
+ *  - janelas de pico por tipo de dia (DOC-PARAMETROS §2.A);
+ *  - faixa de fluxo de pico do segmento (DOC-PARAMETROS §1);
+ *  - madrugada baixa (§2.B).
+ * Todo o resto (formato, ruído, multiplicadores dos cenários, velocidades, filas) é ARBITRÁRIO.
  */
 
 export const SIMULATION_PARAMS = {
   intervalMinutes: 15,
-  /** Fração do pico no entrepico (arbitrário). */
   offPeakShare: 0.6,
-  /** Fração do pico na madrugada (arbitrário, escolhido < 5% para respeitar a Seção 2.B). */
   overnightShare: 0.03,
-  /** Ruído multiplicativo ± (arbitrário). */
   noise: 0.08,
-  /** Velocidade de fluxo livre sintética, km/h (arbitrário — sem base documental). */
   syntheticFreeSpeedKmh: 60,
-  /** Redução máxima sintética de velocidade no pico (arbitrário). */
   syntheticSpeedDrop: 0.55,
 } as const;
+
+export type ScenarioId = "fluxo-baixo" | "fluxo-moderado" | "fluxo-alto" | "velocidade-alta" | "velocidade-baixa" | "fila-crescente" | "fila-estavel";
+
+export const SCENARIOS: Record<ScenarioId, { label: string; flowFactor: number; speedFactor: number; queue: "nenhuma" | "crescente" | "estavel"; note: string }> = {
+  "fluxo-baixo": { label: "Fluxo baixo", flowFactor: 0.4, speedFactor: 1, queue: "nenhuma", note: "pico = 40% do sorteado na faixa da fonte" },
+  "fluxo-moderado": { label: "Fluxo moderado", flowFactor: 0.75, speedFactor: 1, queue: "nenhuma", note: "pico = 75%" },
+  "fluxo-alto": { label: "Fluxo alto", flowFactor: 1, speedFactor: 1, queue: "nenhuma", note: "pico dentro da faixa da fonte" },
+  "velocidade-alta": { label: "Velocidade alta", flowFactor: 0.75, speedFactor: 1.25, queue: "nenhuma", note: "velocidades ×1,25" },
+  "velocidade-baixa": { label: "Velocidade baixa", flowFactor: 1, speedFactor: 0.45, queue: "nenhuma", note: "velocidades ×0,45" },
+  "fila-crescente": { label: "Fila crescente", flowFactor: 1, speedFactor: 0.6, queue: "crescente", note: "fila cresce 15 m a cada intervalo nas janelas de pico do segmento" },
+  "fila-estavel": { label: "Fila estável", flowFactor: 1, speedFactor: 0.75, queue: "estavel", note: "fila constante de 120 m nas janelas de pico" },
+};
 
 export function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -36,68 +44,65 @@ export function mulberry32(seed: number) {
   };
 }
 
-const hourOf = (hhmm: string) => Number(hhmm.slice(0, 2));
-
-/** Perfil relativo (0..1) por hora, derivado das janelas de pico da aproximação. */
-export function hourlyShape(peaks: Measurement[]): number[] {
+/** Perfil relativo (0..1) por hora a partir das janelas da §2.A do tipo de dia. */
+export function hourlyShape(dayType: Exclude<DayType, "DESCONHECIDO">, segmentPeaks: Measurement[]): number[] {
   const p = SIMULATION_PARAMS;
-  const shape = Array.from({ length: 24 }, (_, h) => {
-    if (h >= 1 && h < 5) return p.overnightShare;
-    if (h === 0 || h === 5) return p.overnightShare * 2;
-    if (h >= 22) return p.offPeakShare * 0.5;
-    return p.offPeakShare;
-  });
-  for (const m of peaks) {
-    if (!m.value) continue;
-    const maxPeak = Math.max(...peaks.map((x) => x.value?.max ?? 0));
-    const rel = m.value.max / maxPeak;
-    for (const w of m.windows) {
-      for (let h = hourOf(w.start); h < hourOf(w.end); h++) shape[h] = Math.max(shape[h], rel);
-    }
+  const shape = Array.from({ length: 24 }, (_, h) => (h >= 1 && h < 5 ? p.overnightShare : h === 0 || h === 5 ? p.overnightShare * 2 : h >= 22 ? p.offPeakShare * 0.5 : p.offPeakShare));
+  if (dayType === "DIA_UTIL" && segmentPeaks.length) {
+    // Dias úteis: janelas do próprio segmento (matriz), relativas ao maior pico.
+    const maxPeak = Math.max(...segmentPeaks.map((x) => x.value!.max));
+    for (const m of segmentPeaks)
+      for (const w of m.windows) for (let h = Number(w.start.slice(0, 2)); h < Number(w.end.slice(0, 2)); h++) shape[h] = Math.max(shape[h], m.value!.max / maxPeak);
+  } else {
+    for (const w of PEAK_WINDOWS[dayType]) for (let h = w.startHour; h < w.endHour; h++) shape[h] = 1;
   }
   return shape;
 }
 
-export interface SimulationResult {
-  approachId: string;
+export interface SimulationInput {
+  segment: RoadSegment;
+  measurements: Measurement[];
   seed: number;
-  date: string;
-  targetPeakFlow: number;
-  observations: TrafficObservation[];
+  scenario: ScenarioId;
+  dayType: Exclude<DayType, "DESCONHECIDO">;
 }
 
-export function simulateDay(approach: Approach, measurements: Measurement[], seed: number, date = "2026-01-05"): SimulationResult {
+export function simulateDay({ segment, measurements, seed, scenario, dayType }: SimulationInput) {
   const rand = mulberry32(seed);
   const p = SIMULATION_PARAMS;
-  const peaks = measurements.filter((m) => m.approachId === approach.id && m.metric.startsWith("PICO") && m.value);
-  if (!peaks.length) throw new Error(`Aproximação sem pico na fonte: ${approach.id}`);
-  const peakRange = peaks.reduce((a, b) => ((b.value!.max > a.value!.max) ? b : a)).value!;
-  const targetPeakFlow = peakRange.min + rand() * (peakRange.max - peakRange.min);
-  const shape = hourlyShape(peaks);
-  const perInterval = 60 / p.intervalMinutes;
-
-  const observations: TrafficObservation[] = [];
+  const sc = SCENARIOS[scenario];
+  const peaks = measurements.filter((m) => m.segmentId === segment.id && m.metric.startsWith("PICO") && m.value);
+  if (!peaks.length) throw new Error(`Segmento sem pico na fonte: ${segment.id}`);
+  const range = peaks.reduce((a, b) => (b.value!.max > a.value!.max ? b : a)).value!;
+  let peakFlow = range.min + rand() * (range.max - range.min);
+  // Fins de semana: §2.B indica queda de 25–50% do VDM; aplicada aqui ao pico (hipótese do simulador).
+  const weekendFactor = dayType === "DIA_UTIL" ? 1 : 1 - (0.25 + rand() * 0.25);
+  peakFlow *= weekendFactor * sc.flowFactor;
+  const shape = hourlyShape(dayType, peaks);
+  const peakHours = new Set<number>();
+  if (dayType === "DIA_UTIL") for (const m of peaks) for (const w of m.windows) for (let h = Number(w.start.slice(0, 2)); h < Number(w.end.slice(0, 2)); h++) peakHours.add(h);
+  else for (const w of PEAK_WINDOWS[dayType]) for (let h = w.startHour; h < w.endHour; h++) peakHours.add(h);
+  const per = 60 / p.intervalMinutes;
+  const seriesId = `sim-${segment.id}-${scenario}-${dayType}-${seed}`;
+  const obs: TrafficObservation[] = [];
+  let queue = 0;
   for (let h = 0; h < 24; h++) {
-    for (let k = 0; k < perInterval; k++) {
-      const start = new Date(`${date}T00:00:00Z`);
-      start.setUTCMinutes(h * 60 + k * p.intervalMinutes);
-      const end = new Date(start.getTime() + p.intervalMinutes * 60000);
+    for (let k = 0; k < per; k++) {
       const noise = 1 + (rand() * 2 - 1) * p.noise;
-      const count = Math.max(0, Math.round((targetPeakFlow * shape[h] * noise) / perInterval));
-      const speed = p.syntheticFreeSpeedKmh * (1 - p.syntheticSpeedDrop * shape[h] ** 2) * (1 + (rand() * 2 - 1) * 0.04);
+      const count = Math.max(0, Math.round((peakFlow * shape[h] * noise) / per));
+      const speed = p.syntheticFreeSpeedKmh * sc.speedFactor * (1 - p.syntheticSpeedDrop * shape[h] ** 2) * (1 + (rand() * 2 - 1) * 0.04);
+      const inPeak = peakHours.has(h);
+      if (sc.queue === "crescente") queue = inPeak ? queue + 15 : Math.max(0, queue - 30);
+      if (sc.queue === "estavel") queue = inPeak ? 120 : 0;
       const o: TrafficObservation = {
-        id: `sim-${seed}-${approach.id}-${h}-${k}`,
-        approachId: approach.id,
-        source: "SIMULACAO",
-        intervalStart: start.toISOString(),
-        intervalEnd: end.toISOString(),
-        vehicleCount: count,
-        averageSpeedKmh: Math.round(speed * 10) / 10,
-        quality: "VALIDO",
+        id: `${seriesId}-${h}-${k}`, segmentId: segment.id, source: "SIMULACAO", seriesId, date: null, month: null, weekday: null, dayType,
+        startTime: `${String(h).padStart(2, "0")}:${String(k * p.intervalMinutes).padStart(2, "0")}`, durationMinutes: p.intervalMinutes,
+        vehicleCount: count, averageSpeedKmh: Math.round(speed * 10) / 10, p85SpeedKmh: null,
+        queueLengthM: sc.queue === "nenhuma" ? null : queue, quality: "VALIDO", sourceRef: null, raw: null,
       };
       o.quality = validateObservation(o);
-      observations.push(o);
+      obs.push(o);
     }
   }
-  return { approachId: approach.id, seed, date, targetPeakFlow, observations };
+  return { seriesId, peakFlowTarget: peakFlow, weekendFactor, observations: obs };
 }

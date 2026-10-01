@@ -1,12 +1,25 @@
 import type { SourceDocument } from "@/domain/types";
 
-/**
- * Inventário de documentos-fonte.
- * O documento "PARAMETROS" é uma síntese secundária que cita dois PDFs
- * (relatórios de fiscalização eletrônica da Cidade do Rio de Janeiro e estudo técnico UFRJ).
- * Esses PDFs ainda não foram incorporados ao repositório.
- */
+/** Inventário de documentos-fonte (ver docs/DATA_SOURCES.md). */
 export const SOURCE_DOCUMENTS: SourceDocument[] = [
+  {
+    id: "DOC-FLUXOS-UFRJ",
+    title: "Fluxos UFRJ-Revisado (1).pdf",
+    fileName: null,
+    kind: "PRIMARIA",
+    availableInRepo: false,
+    description:
+      "Relatórios de fluxo veicular diário por faixa horária, por mês e por endereço (logradouro, sentido, pista, faixa, coordenada, data, dia da semana, horário, fluxo, resumo diário). Dados de 2019 e 2023. Não anexado (tamanho). Trechos transcritos via DOC-ESPECIFICACAO.",
+  },
+  {
+    id: "DOC-VELOCIDADES",
+    title: "Relatório de velocidades",
+    fileName: null,
+    kind: "PRIMARIA",
+    availableInRepo: false,
+    description:
+      "Velocidade média por data/dia da semana/horário e informações de 85º percentil. Não anexado; nenhum valor disponível no sistema.",
+  },
   {
     id: "DOC-PARAMETROS",
     title: "Parâmetros do Fluxo de Tráfego",
@@ -14,24 +27,15 @@ export const SOURCE_DOCUMENTS: SourceDocument[] = [
     kind: "SECUNDARIA",
     availableInRepo: true,
     description:
-      "Matriz comparativa de 7 corredores/sentidos (seção 1) e relatório qualitativo de variações de tráfego e capacidade (seção 2). Valores em faixas aproximadas. Não contém fórmulas. O conteúdo aparece duplicado no arquivo; a segunda cópia traz marcadores de citação \"PDF\"/\"PDF+ n\" apontando para os PDFs originais.",
+      "Matriz comparativa de 7 corredores/sentidos (seção 1) e relatório qualitativo (seção 2). Valores em faixas aproximadas; sem fórmulas. Conteúdo duplicado, com marcadores 'PDF+ n' — síntese dos PDFs primários.",
   },
   {
-    id: "DOC-FISCALIZACAO-RJ",
-    title: "Relatórios de fiscalização eletrônica — Cidade do Rio de Janeiro",
-    fileName: null,
-    kind: "PRIMARIA",
-    availableInRepo: false,
+    id: "DOC-ESPECIFICACAO",
+    title: "Especificação MOVA (síntese do autor)",
+    fileName: "docs/fontes/ESPECIFICACAO_MOVA_trechos.md",
+    kind: "ESPECIFICACAO",
+    availableInRepo: true,
     description:
-      "Citado pela síntese como fonte dos fluxos. Não disponível no repositório (arquivo extenso não enviado). Necessário para obter séries horárias, velocidades e metodologia de contagem.",
-  },
-  {
-    id: "DOC-UFRJ",
-    title: "Estudo técnico UFRJ",
-    fileName: null,
-    kind: "PRIMARIA",
-    availableInRepo: false,
-    description:
-      "Citado pela síntese. Não disponível no repositório. Provável fonte de definições metodológicas (capacidade, nível de serviço) — a confirmar.",
+      "Especificação do projeto contendo amostras de séries horárias transcritas do PDF de fluxos. Fonte intermediária: valores devem ser conferidos com o PDF original.",
   },
 ];

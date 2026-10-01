@@ -68,6 +68,6 @@ export function formatRange(r: NumericRange | null, unit: Unit | null): string {
 
 export function unitLabel(u: Unit): string {
   return (
-    { "veic/dia": "veíc/dia", "veic/h": "veíc/h", "km/h": "km/h", "%": "%", faixas: "faixas", adimensional: "" } as const
+    { "veic/dia": "veíc/dia", "veic/h": "veíc/h", veic: "veíc", "km/h": "km/h", "%": "%", m: "m", adimensional: "" } as const
   )[u];
 }

@@ -1,25 +1,32 @@
 /**
  * Tipos centrais do domínio MOVA.
- * Toda grandeza carrega origem (observado na fonte x calculado pelo sistema)
+ * Toda grandeza carrega origem (observado / calculado / interpretado / simulado)
  * e referência metodológica, para permitir rastreabilidade ponta a ponta.
  */
 
-export type DataSourceKind = "HISTORICO" | "SIMULACAO" | "CAMERA";
+export type DataSourceKind = "HISTORICO" | "SIMULACAO" | "CAMERA_TESTE";
 
-export type MethodStatus = "CONFIRMADO" | "PENDENTE" | "EXPERIMENTAL";
+export type MethodStatus = "CONFIRMADO" | "INFERIDO" | "EXPERIMENTAL" | "PENDENTE";
 
-export type QualityStatus = "VALIDO" | "AUSENTE" | "INVALIDO" | "SUSPEITO" | "INCOMPLETO";
+/** Equivalência com a especificação: VALID, MISSING, INVALID, INCOMPLETE, SUSPECT. */
+export type QualityStatus = "VALIDO" | "AUSENTE" | "INVALIDO" | "INCOMPLETO" | "SUSPEITO";
 
-/** De onde vem um número exibido. */
+/** Camada epistemológica de um número exibido. */
 export type ValueOrigin =
-  | "OBSERVADO_NA_FONTE" // transcrito do documento, sem cálculo
-  | "CALCULADO" // produzido pelo motor a partir de dados
+  | "OBSERVADO" // transcrito da fonte ou recebido de um sensor, sem cálculo
+  | "CALCULADO" // produzido pelo motor a partir de dados observados
+  | "INTERPRETADO" // classificação/juízo derivado de metodologia
   | "SIMULADO" // gerado pelo modo simulação
   | "INDISPONIVEL"; // não há dado/método para produzir
 
-export type Unit = "veic/dia" | "veic/h" | "km/h" | "%" | "faixas" | "adimensional";
+export type Unit = "veic/dia" | "veic/h" | "veic" | "km/h" | "%" | "m" | "adimensional";
 
-/** Faixa numérica. Quando min === max é um valor pontual. */
+export type DayType = "DIA_UTIL" | "SABADO" | "DOMINGO" | "DESCONHECIDO";
+
+export type Carriageway = "CENTRAL" | "LATERAL" | "CENTRAL_E_LATERAL" | "EXCLUSIVA_BRT" | "VIA_EXPRESSA" | "NAO_ESPECIFICADA";
+
+export type LaneType = "MISTA" | "BRT" | "MISTA_E_BRT" | "NAO_ESPECIFICADO";
+
 export interface NumericRange {
   min: number;
   max: number;
@@ -28,16 +35,13 @@ export interface NumericRange {
 }
 
 export interface TimeWindow {
-  /** "HH:MM" */
-  start: string;
+  start: string; // "HH:MM"
   end: string;
 }
 
 export interface SourceRef {
   documentId: string;
-  /** Seção do documento (página não identificável em .docx). */
   section: string;
-  /** Linha/célula, quando aplicável. */
   locator?: string;
 }
 
@@ -45,7 +49,7 @@ export interface SourceDocument {
   id: string;
   title: string;
   fileName: string | null;
-  kind: "PRIMARIA" | "SECUNDARIA";
+  kind: "PRIMARIA" | "SECUNDARIA" | "ESPECIFICACAO";
   availableInRepo: boolean;
   description: string;
 }
@@ -53,74 +57,107 @@ export interface SourceDocument {
 export interface Coordinates {
   lat: number;
   lng: number;
-  /** Coordenadas NÃO constam nos documentos. */
-  provenance: "APROXIMADO_FONTE_EXTERNA";
+  provenance: "APROXIMADO_FONTE_EXTERNA" | "FONTE_DOCUMENTAL";
   note: string;
 }
 
+/** Eixo viário (ex.: Av. das Américas). */
 export interface Corridor {
   id: string;
   name: string;
+  description: string;
+  locationIds: string[];
+}
+
+/** Ponto de medição ao longo do corredor (ex.: próximo ao nº 2000). */
+export interface Location {
+  id: string;
+  corridorId: string;
   address: string;
   reference: string | null;
   roadClassRaw: string | null;
   coordinates: Coordinates | null;
-  approachIds: string[];
+  segmentIds: string[];
 }
 
-/** Uma linha da matriz do documento: corredor + sentido/pista. */
-export interface Approach {
+/** Sentido + pista + conjunto de faixas monitoradas num local. */
+export interface RoadSegment {
   id: string;
+  locationId: string;
   corridorId: string;
   label: string;
-  directionRaw: string;
-  lanesRaw: string;
+  direction: string;
+  carriageway: Carriageway;
+  laneType: LaneType;
   laneCount: number | null;
+  lanesMonitoredRaw: string;
+  directionRaw: string;
   speedRecordRaw: string;
   notesRaw: string;
+  /** Interpretação estrutural da linha da matriz — explicitada para validação. */
+  structureNote: string | null;
   source: SourceRef;
 }
 
-export type MeasurementMetric =
-  | "VDM_DIAS_UTEIS"
-  | "VOLUME_FIM_DE_SEMANA"
-  | "PICO_MANHA"
-  | "PICO_TARDE_NOITE";
+export type MeasurementMetric = "VDM_DIAS_UTEIS" | "VOLUME_FIM_DE_SEMANA" | "PICO_MANHA" | "PICO_TARDE_NOITE";
 
-/** Medida agregada reportada no documento (não é observação primária). */
+/** Medida agregada reportada num documento (faixa), não observação primária. */
 export interface Measurement {
   id: string;
-  approachId: string;
+  segmentId: string;
   metric: MeasurementMetric;
-  /** Texto exatamente como na fonte. */
   raw: string;
   value: NumericRange | null;
   unit: Unit | null;
-  /** Unidade como escrita na fonte (ex.: "veg/dia"). */
   rawUnit: string | null;
   windows: TimeWindow[];
-  /** Qualificador entre parênteses fora da janela (ex.: "Central", "por sentido"). */
   qualifier: string | null;
   source: SourceRef;
 }
 
-/** Observação primária em intervalo (simulação / futura câmera / contagem). */
+/**
+ * Observação primária em intervalo — mesma estrutura para HISTÓRICO, SIMULAÇÃO e CÂMERA.
+ * A data pode ser desconhecida (ex.: série de 03/2019 sem dia informado): nunca é inventada.
+ */
 export interface TrafficObservation {
   id: string;
-  approachId: string;
+  segmentId: string;
   source: DataSourceKind;
-  intervalStart: string; // ISO
-  intervalEnd: string; // ISO
+  /** Agrupa observações de um mesmo dia/série. */
+  seriesId: string;
+  date: string | null; // YYYY-MM-DD
+  month: string | null; // YYYY-MM
+  weekday: number | null; // 0 = domingo
+  dayType: DayType;
+  startTime: string; // HH:MM
+  durationMinutes: number;
   vehicleCount: number | null;
   averageSpeedKmh: number | null;
+  p85SpeedKmh: number | null;
+  queueLengthM: number | null;
   quality: QualityStatus;
+  sourceRef: SourceRef | null;
+  raw: string | null;
+}
+
+export interface Series {
+  id: string;
+  segmentId: string;
+  source: DataSourceKind;
+  label: string;
+  date: string | null;
+  month: string | null;
+  weekday: number | null;
+  dayType: DayType;
+  sourceRef: SourceRef | null;
+  observationIds: string[];
 }
 
 export interface QualityIssue {
   id: string;
   status: QualityStatus;
   rule: string;
-  target: { kind: "measurement" | "approach" | "document" | "observation"; id: string };
+  target: { kind: "measurement" | "segment" | "document" | "observation" | "series"; id: string };
   message: string;
   evidence: string;
 }
@@ -128,10 +165,10 @@ export interface QualityIssue {
 export interface MethodologyEntry {
   id: string;
   name: string;
+  /** Classificação da Etapa 2. */
+  category: "DADO" | "INDICADOR" | "FORMULA" | "REGRA" | "INTERPRETACAO" | "HIPOTESE";
   description: string;
-  /** Fórmula exatamente como na fonte; null quando a fonte não traz fórmula. */
   formula: string | null;
-  /** Expressão implementada pelo sistema (pode diferir de `formula`). */
   implementation: string | null;
   variables: { symbol: string; meaning: string; unit: string }[];
   unit: Unit | null;
@@ -143,14 +180,7 @@ export interface MethodologyEntry {
   gaps: string[];
 }
 
-export type TraceStepKind =
-  | "INDICADOR"
-  | "VARIAVEIS"
-  | "ENTRADA"
-  | "FORMULA"
-  | "INTERMEDIARIO"
-  | "RESULTADO"
-  | "INTERPRETACAO";
+export type TraceStepKind = "INDICADOR" | "VARIAVEIS" | "ENTRADA" | "FORMULA" | "INTERMEDIARIO" | "RESULTADO" | "INTERPRETACAO";
 
 export interface TraceStep {
   kind: TraceStepKind;
@@ -162,7 +192,7 @@ export interface Indicator {
   id: string;
   key: string;
   name: string;
-  approachId: string;
+  segmentId: string;
   origin: ValueOrigin;
   value: NumericRange | null;
   unit: Unit | null;
@@ -176,7 +206,6 @@ export interface Indicator {
 export type OperationalLevel = "NORMAL" | "ATENCAO" | "CRITICO" | "CONGESTIONADO";
 
 export interface ConditionThresholds {
-  /** Limite inferior (inclusivo) de cada nível acima de NORMAL. */
   atencao: number;
   critico: number;
   congestionado: number;

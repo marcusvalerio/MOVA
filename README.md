@@ -1,37 +1,40 @@
-# MOVA — Plataforma de monitoramento e inteligência de tráfego (MVP)
+# MOVA — Plataforma de Inteligência de Tráfego
 
-Protótipo baseado na metodologia e nos dados fornecidos (`docs/fontes`). É uma **caixa-preta aberta**: cada número exibido pode ser clicado para mostrar a fonte, a fórmula (ou a ausência dela), os dados de entrada e o status metodológico.
+*Inteligência para compreender o movimento urbano.*
 
-- **Análise da Fase 1** (inventário, lacunas, pontos a validar): [`docs/ANALISE_FASE1.md`](docs/ANALISE_FASE1.md)
-- **Esquema PostgreSQL:** [`db/schema.sql`](db/schema.sql)
+MVP acadêmico construído a partir dos materiais de um professor de Mestrado em Engenharia de Transportes. O MOVA é uma **caixa-preta aberta**: qualquer número exibido pode ser clicado para mostrar a fonte, os dados de entrada, a fórmula (ou a falta dela), o cálculo intermediário, a interpretação e o status metodológico.
+
+Prioridade do projeto: **correção → rastreabilidade → metodologia → dados → visualização → design**.
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [docs/INVENTARIO.md](docs/INVENTARIO.md) | Etapas 1–4: dados, indicadores, fórmulas, regras, interpretações; o que está confirmado e o que não está |
+| [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) | Fontes e cadeia de proveniência |
+| [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) | Todos os campos |
+| [docs/METHODOLOGY_CATALOG.md](docs/METHODOLOGY_CATALOG.md) | Catálogo de regras e fórmulas (gerado do código) |
+| [docs/INDICATOR_CATALOG.md](docs/INDICATOR_CATALOG.md) | Indicadores |
+| [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md) | Hipóteses do sistema |
+| [docs/PENDING_VALIDATION.md](docs/PENDING_VALIDATION.md) | O que precisa ser validado com o professor |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Camadas e API |
+| [db/schema.sql](db/schema.sql) | Esquema PostgreSQL |
 
 ## Princípios
 
-- **Nenhuma metodologia é inventada.** O documento-fonte não contém fórmulas. Todo cálculo sem definição documental aparece como `PENDENTE` ou `EXPERIMENTAL`.
-- **Dados históricos são preservados literalmente.** As faixas `~mín – máx` nunca são reduzidas a um ponto.
-- **Qualidade de dados registra e não corrige.**
-- **Fontes separadas e identificadas:** `HISTÓRICO`, `SIMULAÇÃO` e `CÂMERA` (esta ainda não conectada).
+- **Nenhuma fórmula, limite ou classificação é inventada.** As fontes não têm fórmulas explícitas. Cada cálculo traz o status CONFIRMADO, INFERIDO, EXPERIMENTAL ou PENDENTE.
+- **Observado, calculado e interpretado ficam sempre separados.**
+- **Dados ausentes ficam visíveis.** Nada é preenchido, interpolado ou corrigido em silêncio.
+- **Datas desconhecidas não são inventadas**, e só se comparam períodos compatíveis (mesmo segmento e mesmo tipo de dia); o resto aparece com aviso.
+- **Fontes separadas e identificadas:** HISTÓRICO, SIMULAÇÃO e CÂMERA DE TESTE. Não há integração com CIVITAS.
 
 ## Rodando
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm test           # vitest
+npm run dev          # http://localhost:3000
+npm test             # vitest
 npm run typecheck
+npm run docs         # regenera docs/METHODOLOGY_CATALOG.md
 npm run build
-```
-
-## Arquitetura
-
-```
-src/data            1. dados brutos (texto literal da fonte)
-src/normalization   2. normalização
-src/quality         3. qualidade de dados
-src/engine          4. motor de engenharia de tráfego
-src/methodology     5. registro de metodologia
-src/analytics       6. indicadores + rastreabilidade
-src/app, components 7. apresentação (Next.js)
-src/adapters        8. adaptador de visão computacional
-src/repository      interface de repositório (memória → PostgreSQL)
 ```
