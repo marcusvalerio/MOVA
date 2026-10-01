@@ -1,0 +1,5 @@
+# Instale o torch CPU antes, se não tiver GPU:
+#   pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+ultralytics>=8.3
+lap>=0.5.12
+imageio-ffmpeg>=0.5

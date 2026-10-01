@@ -4,3 +4,8 @@ next-env.d.ts
 *.tsbuildinfo
 .env*
 !.env.example
+cv/demo/*.ogv
+cv/demo/out/*.mkv
+cv/*.pt
+cv/.venv
+__pycache__/

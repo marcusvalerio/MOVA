@@ -1,0 +1,65 @@
+{
+  "camera": {
+    "cameraId": "DEMO-AYALON-01",
+    "source": "VIDEO_LICENCA_ABERTA",
+    "description": "Vídeo de demonstração (Ayalon Freeway, Tel Aviv). NÃO é câmera CIVITAS nem via do Rio de Janeiro.",
+    "video": {
+      "file": "ayalon.ogv",
+      "title": "Ayalon Freeway Azriely Towers View P1150161.ogv",
+      "url": "https://commons.wikimedia.org/wiki/File:Ayalon_Freeway_Azriely_Towers_View_P1150161.ogv",
+      "author": "Deror_avi",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "captureDate": null
+    }
+  },
+  "model": {
+    "weights": "yolo11s.pt",
+    "imgsz": 1280,
+    "conf": 0.25,
+    "tracker": "bytetrack.yaml",
+    "classes": {
+      "2": "carro",
+      "3": "moto",
+      "5": "onibus",
+      "7": "caminhao"
+    },
+    "ultralytics": "8.4.171"
+  },
+  "frames": 226,
+  "fps": 30.0,
+  "durationSeconds": 7.533,
+  "resolution": [
+    1280,
+    720
+  ],
+  "processingSeconds": 131.8,
+  "device": "cpu",
+  "framesInVideo": 585,
+  "stoppedReason": "linha 'rodovia-dir' saiu do enquadramento no quadro 226 (t=7.53s): contagem interrompida",
+  "stabilization": {
+    "enabled": true,
+    "minInliers": 300,
+    "method": "ORB + homografia RANSAC para o quadro 0",
+    "minInliersObserved": 747
+  },
+  "tracksTotal": 504,
+  "crossings": 27,
+  "countsByLine": {
+    "viaduto|Oeste (←)": 1,
+    "viaduto|Leste (→)": 1,
+    "rodovia-dir|Sul (↓)": 0,
+    "rodovia-dir|Norte (↑)": 9,
+    "rodovia-esq|Sul (↓)": 16,
+    "rodovia-esq|Norte (↑)": 0
+  },
+  "limitations": [
+    "Vídeo de demonstração com licença aberta (Tel Aviv); não é via do Rio nem câmera CIVITAS.",
+    "Data/hora da gravação desconhecida: tipo de dia não determinável.",
+    "Clipe de 7.5 s: extrapolar para veíc/h tem alta incerteza.",
+    "Velocidade e fila não estimadas: sem calibração métrica da cena.",
+    "Classificação por classe COCO (carro/moto/ônibus/caminhão) sujeita a erro (ex.: ônibus detectado como caminhão).",
+    "Veículos ocultos (atrás de outros ou sob o viaduto) podem não ser contados; trocas de ID podem duplicar.",
+    "Nenhuma contagem manual de referência: precisão da contagem não medida."
+  ]
+}

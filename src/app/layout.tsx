@@ -28,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="nav-sep" />
               <Link href="/simulacao">Simulação</Link>
               <Link href="/camera">Câmera de teste</Link>
+              <Link href="/camera/demo">Demo YOLO</Link>
             </nav>
             <div className="side-foot">MVP 0.2 · fontes: UFRJ (trechos), Parâmetros</div>
           </aside>

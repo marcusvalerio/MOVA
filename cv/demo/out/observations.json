@@ -1,0 +1,88 @@
+[
+  {
+    "cameraId": "DEMO-AYALON-01:viaduto",
+    "timestamp": null,
+    "intervalSeconds": 7.533,
+    "vehicleCount": 1,
+    "vehicleTypes": {
+      "carro": 1
+    },
+    "averageSpeed": null,
+    "queueLength": null,
+    "direction": "Oeste (←)",
+    "occupancy": null,
+    "confidence": 0.627,
+    "source": "VIDEO_LICENCA_ABERTA · yolo11s.pt + bytetrack.yaml"
+  },
+  {
+    "cameraId": "DEMO-AYALON-01:viaduto",
+    "timestamp": null,
+    "intervalSeconds": 7.533,
+    "vehicleCount": 1,
+    "vehicleTypes": {
+      "carro": 1
+    },
+    "averageSpeed": null,
+    "queueLength": null,
+    "direction": "Leste (→)",
+    "occupancy": null,
+    "confidence": 0.593,
+    "source": "VIDEO_LICENCA_ABERTA · yolo11s.pt + bytetrack.yaml"
+  },
+  {
+    "cameraId": "DEMO-AYALON-01:rodovia-dir",
+    "timestamp": null,
+    "intervalSeconds": 7.533,
+    "vehicleCount": 0,
+    "vehicleTypes": {},
+    "averageSpeed": null,
+    "queueLength": null,
+    "direction": "Sul (↓)",
+    "occupancy": null,
+    "confidence": 0,
+    "source": "VIDEO_LICENCA_ABERTA · yolo11s.pt + bytetrack.yaml"
+  },
+  {
+    "cameraId": "DEMO-AYALON-01:rodovia-dir",
+    "timestamp": null,
+    "intervalSeconds": 7.533,
+    "vehicleCount": 9,
+    "vehicleTypes": {
+      "carro": 9
+    },
+    "averageSpeed": null,
+    "queueLength": null,
+    "direction": "Norte (↑)",
+    "occupancy": null,
+    "confidence": 0.608,
+    "source": "VIDEO_LICENCA_ABERTA · yolo11s.pt + bytetrack.yaml"
+  },
+  {
+    "cameraId": "DEMO-AYALON-01:rodovia-esq",
+    "timestamp": null,
+    "intervalSeconds": 7.533,
+    "vehicleCount": 16,
+    "vehicleTypes": {
+      "carro": 16
+    },
+    "averageSpeed": null,
+    "queueLength": null,
+    "direction": "Sul (↓)",
+    "occupancy": null,
+    "confidence": 0.557,
+    "source": "VIDEO_LICENCA_ABERTA · yolo11s.pt + bytetrack.yaml"
+  },
+  {
+    "cameraId": "DEMO-AYALON-01:rodovia-esq",
+    "timestamp": null,
+    "intervalSeconds": 7.533,
+    "vehicleCount": 0,
+    "vehicleTypes": {},
+    "averageSpeed": null,
+    "queueLength": null,
+    "direction": "Norte (↑)",
+    "occupancy": null,
+    "confidence": 0,
+    "source": "VIDEO_LICENCA_ABERTA · yolo11s.pt + bytetrack.yaml"
+  }
+]

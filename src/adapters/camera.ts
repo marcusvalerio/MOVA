@@ -15,8 +15,10 @@ import { validateObservation } from "@/quality/rules";
  */
 export const CameraObservationSchema = z.object({
   cameraId: z.string().min(1),
-  timestamp: z.string().datetime({ offset: true }),
-  intervalSeconds: z.number().int().positive().max(3600),
+  /** Início do intervalo (ISO 8601 com fuso). null = data/hora da gravação desconhecida. */
+  timestamp: z.string().datetime({ offset: true }).nullable(),
+  /** Duração do intervalo agregado, em segundos (pode ser fracionária, ex.: 7,533 s de vídeo). */
+  intervalSeconds: z.number().positive().max(3600),
   vehicleCount: z.number().int().nonnegative(),
   vehicleTypes: z.record(z.string(), z.number().int().nonnegative()).optional(),
   averageSpeed: z.number().nonnegative().nullable().optional(),
@@ -41,21 +43,26 @@ export const CAMERA_STATUS = {
 export const MIN_CONFIDENCE: number | null = null;
 
 export function toTrafficObservation(c: CameraObservation, segmentId: string): TrafficObservation {
-  const d = new Date(c.timestamp);
-  // Data/hora em America/Sao_Paulo (UTC−3, sem horário de verão desde 2019).
-  const local = new Date(d.getTime() - 3 * 3600000);
-  const date = local.toISOString().slice(0, 10);
-  const wd = local.getUTCDay();
+  let date: string | null = null, wd: number | null = null, startTime: string | null = null, iso = "sem-data";
+  if (c.timestamp) {
+    const d = new Date(c.timestamp);
+    // Data/hora em America/Sao_Paulo (UTC−3, sem horário de verão desde 2019).
+    const local = new Date(d.getTime() - 3 * 3600000);
+    date = local.toISOString().slice(0, 10);
+    wd = local.getUTCDay();
+    startTime = local.toISOString().slice(11, 16);
+    iso = d.toISOString();
+  }
   const o: TrafficObservation = {
-    id: `cam-${c.cameraId}-${d.toISOString()}`,
+    id: `cam-${c.cameraId}-${iso}`,
     segmentId,
     source: "CAMERA_TESTE",
-    seriesId: `cam-${c.cameraId}-${date}`,
+    seriesId: `cam-${c.cameraId}-${date ?? "sem-data"}`,
     date,
-    month: date.slice(0, 7),
+    month: date ? date.slice(0, 7) : null,
     weekday: wd,
-    dayType: wd === 0 ? "DOMINGO" : wd === 6 ? "SABADO" : "DIA_UTIL",
-    startTime: local.toISOString().slice(11, 16),
+    dayType: wd == null ? "DESCONHECIDO" : wd === 0 ? "DOMINGO" : wd === 6 ? "SABADO" : "DIA_UTIL",
+    startTime,
     durationMinutes: c.intervalSeconds / 60,
     vehicleCount: c.vehicleCount,
     averageSpeedKmh: c.averageSpeed ?? null,
@@ -95,7 +102,7 @@ export function processCameraObservation(c: CameraObservation) {
     calculado: {
       equivalentHourlyFlow: q,
       methodologyId: "M-FLUXO-EQUIVALENTE",
-      expression: q == null ? null : `${c.vehicleCount} × 60 / ${minutes} = ${q}`,
+      expression: q == null ? null : `${c.vehicleCount} × 60 / ${+minutes.toFixed(4)} = ${+q.toFixed(1)}`,
       status: "INFERIDO",
     },
     interpretado: {

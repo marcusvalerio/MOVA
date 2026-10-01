@@ -1,11 +1,12 @@
+import Link from "next/link";
 import { Topbar } from "@/components/Topbar";
 import { CameraTester } from "@/components/CameraTester";
 import { CAMERA_REGISTRY, CAMERA_STATUS } from "@/adapters/camera";
 
 const FIELDS: [string, string, string][] = [
   ["cameraId", "string", "Identificador da câmera"],
-  ["timestamp", "ISO 8601 com fuso", "Início do intervalo agregado"],
-  ["intervalSeconds", "int (1–3600)", "Duração do intervalo"],
+  ["timestamp", "ISO 8601 com fuso | null", "Início do intervalo; null se a data/hora for desconhecida"],
+  ["intervalSeconds", "número (0–3600]", "Duração do intervalo em segundos"],
   ["vehicleCount", "int ≥ 0", "Veículos detectados/rastreados no intervalo"],
   ["vehicleTypes", "{classe: int}", "Contagem por classe (opcional)"],
   ["averageSpeed", "km/h | null", "Velocidade média estimada (opcional)"],
@@ -26,6 +27,10 @@ export default function CameraPage() {
           <h2>Pipeline previsto</h2>
           <p className="mono small" style={{ lineHeight: 2 }}>CÂMERA → VIDEO STREAM → COMPUTER VISION → VEÍCULOS DETECTADOS → OBJECT TRACKING → CONTAGEM · VELOCIDADE · FILA · DIREÇÃO → CameraObservation → MOVA TRAFFIC ENGINE → INDICADORES → CONDIÇÃO OPERACIONAL</p>
           <p className="small" style={{ color: "var(--text-2)" }}>A visão computacional responde <strong>&ldquo;o que está sendo observado?&rdquo;</strong>. O motor de engenharia responde <strong>&ldquo;o que esses dados significam?&rdquo;</strong>. A IA não classifica a via.</p>
+        </section>
+        <section className="panel">
+          <div className="panel-head"><h2>Demonstração com vídeo real</h2><Link className="link small" href="/camera/demo">abrir demonstração →</Link></div>
+          <p className="small" style={{ color: "var(--text-2)" }}>YOLO + rastreamento + contagem por linha virtual sobre um vídeo de tráfego com licença aberta, processado pelo mesmo adaptador abaixo.</p>
         </section>
         <section className="panel">
           <h2>Testar o contrato</h2>

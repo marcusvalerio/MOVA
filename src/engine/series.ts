@@ -28,6 +28,8 @@ const hourOf = (hhmm: string) => Number(hhmm.slice(0, 2));
 export function aggregateHourly(obs: TrafficObservation[]): HourlyFlow[] {
   const b = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0, cov: 0, sN: 0, sD: 0, p85: [] as number[], queue: null as number | null, st: [] as string[] }));
   for (const o of obs) {
+    // Sem hora conhecida, a observação não pode ser alocada numa hora do dia.
+    if (o.startTime == null) continue;
     const x = b[hourOf(o.startTime)];
     x.st.push(o.quality);
     if (o.quality !== "VALIDO" || o.vehicleCount == null) continue;

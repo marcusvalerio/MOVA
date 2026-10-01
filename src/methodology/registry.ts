@@ -368,6 +368,49 @@ export const METHODOLOGY: MethodologyEntry[] = [
     status: "PENDENTE",
     gaps: ["Limites aguardando validação metodológica.", "Indicador-base não definido."],
   },
+  // ---------------- VISÃO COMPUTACIONAL ----------------
+  {
+    id: "M-CV-CONTAGEM",
+    name: "Contagem por linha virtual (visão computacional)",
+    category: "DADO",
+    description:
+      "Veículos detectados por YOLO e rastreados por ByteTrack são contados uma vez quando o centroide do rastro cruza um segmento de linha desenhado sobre a via; o sentido vem do lado de chegada.",
+    formula: null,
+    implementation:
+      "cruzamento = segmentos [centroide(t−1), centroide(t)] e [P1, P2] se intersectam; sentido = sinal do produto vetorial (P2−P1)×(c−P1) após o cruzamento. Cada (rastro, linha) conta no máximo uma vez. Classe = classe mais frequente do rastro.",
+    variables: [
+      { symbol: "n", meaning: "Cruzamentos por linha e sentido no intervalo", unit: "veíc" },
+      { symbol: "Δt", meaning: "Duração do intervalo analisado", unit: "s" },
+    ],
+    unit: "veic",
+    purpose: "Produzir a camada OBSERVADO a partir de vídeo, no mesmo formato (CameraObservation) que uma câmera real usaria.",
+    sources: [E("§20–21, §33")],
+    externalSource: "FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS — Ultralytics YOLO (detecção) e ByteTrack (rastreamento); procedimento de linha virtual é escolha do sistema.",
+    version: "0.3.0",
+    status: "EXPERIMENTAL",
+    gaps: [
+      "Precisão não medida: falta contagem manual de referência.",
+      "Trocas de ID do rastreador podem duplicar contagens; veículos ocultos podem não ser contados.",
+      "Classes COCO (carro, moto, ônibus, caminhão) não correspondem a uma taxonomia validada.",
+    ],
+  },
+  {
+    id: "M-CV-ESTABILIZACAO",
+    name: "Estabilização de vídeo e janela válida",
+    category: "HIPOTESE",
+    description:
+      "Para vídeos com câmera não fixa, cada quadro é alinhado ao quadro de referência por homografia; a contagem para quando o alinhamento se perde ou quando uma linha sai do enquadramento.",
+    formula: null,
+    implementation: "ORB (4000 pontos) + RANSAC (3 px) → H quadro→referência; válido se inliers ≥ 300 e |escala − 1| ≤ 0,05 e todas as linhas visíveis.",
+    variables: [],
+    unit: null,
+    purpose: "Garantir que as linhas de contagem representem sempre a mesma seção da via.",
+    sources: [],
+    externalSource: "FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS — técnica padrão de visão computacional (OpenCV); limites são parâmetros do sistema.",
+    version: "0.3.0",
+    status: "EXPERIMENTAL",
+    gaps: ["Em câmeras fixas (caso de uso real) a estabilização é desnecessária."],
+  },
 ];
 
 export function getMethodology(id: string): MethodologyEntry {

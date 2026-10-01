@@ -28,6 +28,8 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 | M-NIVEL-SERVICO | Nível de Serviço (A–F) | INTERPRETACAO | PENDENTE |
 | M-RELACAO-FLUXO-VELOCIDADE | Relação fluxo × velocidade | INTERPRETACAO | PENDENTE |
 | M-CONDICAO | Condição operacional (NORMAL → ATENÇÃO → CRÍTICO → CONGESTIONADO) | INTERPRETACAO | PENDENTE |
+| M-CV-CONTAGEM | Contagem por linha virtual (visão computacional) | DADO | EXPERIMENTAL |
+| M-CV-ESTABILIZACAO | Estabilização de vídeo e janela válida | HIPOTESE | EXPERIMENTAL |
 
 ## Dados
 
@@ -71,6 +73,22 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Lacunas:**
   - Não se sabe se a faixa representa variação entre dias, entre equipamentos ou incerteza.
   - Unidade grafada 'veg/dia' — interpretada como veículos.
+
+### M-CV-CONTAGEM — Contagem por linha virtual (visão computacional)
+
+- **Status:** EXPERIMENTAL · v0.3.0
+- **O que é:** Veículos detectados por YOLO e rastreados por ByteTrack são contados uma vez quando o centroide do rastro cruza um segmento de linha desenhado sobre a via; o sentido vem do lado de chegada.
+- **Fórmula na fonte:** não documentada
+- **Implementação:** `cruzamento = segmentos [centroide(t−1), centroide(t)] e [P1, P2] se intersectam; sentido = sinal do produto vetorial (P2−P1)×(c−P1) após o cruzamento. Cada (rastro, linha) conta no máximo uma vez. Classe = classe mais frequente do rastro.`
+- **Variáveis:** `n` Cruzamentos por linha e sentido no intervalo [veíc]; `Δt` Duração do intervalo analisado [s]
+- **Unidade:** veic
+- **Por que existe:** Produzir a camada OBSERVADO a partir de vídeo, no mesmo formato (CameraObservation) que uma câmera real usaria.
+- **Fontes:** Especificação MOVA (síntese do autor) — §20–21, §33
+- **Fonte externa:** FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS — Ultralytics YOLO (detecção) e ByteTrack (rastreamento); procedimento de linha virtual é escolha do sistema.
+- **Lacunas:**
+  - Precisão não medida: falta contagem manual de referência.
+  - Trocas de ID do rastreador podem duplicar contagens; veículos ocultos podem não ser contados.
+  - Classes COCO (carro, moto, ônibus, caminhão) não correspondem a uma taxonomia validada.
 
 ## Indicadores
 
@@ -302,3 +320,16 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Fonte externa:** Parâmetros do sistema (3 inversões; 20%) — não presentes nos documentos.
 - **Lacunas:**
   - Parâmetros arbitrários; servem para priorizar conferência com o PDF.
+
+### M-CV-ESTABILIZACAO — Estabilização de vídeo e janela válida
+
+- **Status:** EXPERIMENTAL · v0.3.0
+- **O que é:** Para vídeos com câmera não fixa, cada quadro é alinhado ao quadro de referência por homografia; a contagem para quando o alinhamento se perde ou quando uma linha sai do enquadramento.
+- **Fórmula na fonte:** não documentada
+- **Implementação:** `ORB (4000 pontos) + RANSAC (3 px) → H quadro→referência; válido se inliers ≥ 300 e |escala − 1| ≤ 0,05 e todas as linhas visíveis.`
+- **Unidade:** —
+- **Por que existe:** Garantir que as linhas de contagem representem sempre a mesma seção da via.
+- **Fontes:** nenhuma fonte documental
+- **Fonte externa:** FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS — técnica padrão de visão computacional (OpenCV); limites são parâmetros do sistema.
+- **Lacunas:**
+  - Em câmeras fixas (caso de uso real) a estabilização é desnecessária.

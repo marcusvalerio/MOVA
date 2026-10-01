@@ -1,0 +1,84 @@
+{
+  "camera": {
+    "cameraId": "DEMO-AYALON-01",
+    "source": "VIDEO_LICENCA_ABERTA",
+    "description": "Vídeo de demonstração (Ayalon Freeway, Tel Aviv). NÃO é câmera CIVITAS nem via do Rio de Janeiro.",
+    "video": {
+      "file": "ayalon.ogv",
+      "title": "Ayalon Freeway Azriely Towers View P1150161.ogv",
+      "url": "https://commons.wikimedia.org/wiki/File:Ayalon_Freeway_Azriely_Towers_View_P1150161.ogv",
+      "author": "Deror_avi",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "captureDate": null
+    }
+  },
+  "stabilization": {
+    "enabled": true,
+    "minInliers": 300,
+    "method": "ORB + homografia RANSAC para o quadro 0"
+  },
+  "model": {
+    "weights": "yolo11s.pt",
+    "imgsz": 1280,
+    "conf": 0.25,
+    "tracker": "bytetrack.yaml",
+    "classes": {
+      "2": "carro",
+      "3": "moto",
+      "5": "onibus",
+      "7": "caminhao"
+    }
+  },
+  "lines": [
+    {
+      "id": "viaduto",
+      "label": "Viaduto (pista horizontal)",
+      "p1": [
+        760,
+        415
+      ],
+      "p2": [
+        760,
+        485
+      ],
+      "directions": {
+        "positive": "Oeste (←)",
+        "negative": "Leste (→)"
+      }
+    },
+    {
+      "id": "rodovia-dir",
+      "label": "Rodovia inferior — pista direita",
+      "p1": [
+        870,
+        620
+      ],
+      "p2": [
+        1180,
+        620
+      ],
+      "directions": {
+        "positive": "Sul (↓)",
+        "negative": "Norte (↑)"
+      }
+    },
+    {
+      "id": "rodovia-esq",
+      "label": "Rodovia inferior — pista esquerda",
+      "p1": [
+        330,
+        620
+      ],
+      "p2": [
+        610,
+        620
+      ],
+      "directions": {
+        "positive": "Sul (↓)",
+        "negative": "Norte (↑)"
+      }
+    }
+  ],
+  "note": "Linhas definidas nas coordenadas do quadro 0 (referência da estabilização)."
+}

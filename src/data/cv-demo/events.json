@@ -1,0 +1,245 @@
+[
+ {
+  "track": 26,
+  "classe": "carro",
+  "confianca_media": 0.516,
+  "quadro": 1,
+  "tempo_s": 0.03,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 30,
+  "classe": "carro",
+  "confianca_media": 0.532,
+  "quadro": 5,
+  "tempo_s": 0.17,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 174,
+  "classe": "carro",
+  "confianca_media": 0.612,
+  "quadro": 11,
+  "tempo_s": 0.37,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 173,
+  "classe": "carro",
+  "confianca_media": 0.673,
+  "quadro": 13,
+  "tempo_s": 0.43,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 299,
+  "classe": "carro",
+  "confianca_media": 0.561,
+  "quadro": 41,
+  "tempo_s": 1.37,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 571,
+  "classe": "carro",
+  "confianca_media": 0.523,
+  "quadro": 41,
+  "tempo_s": 1.37,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 362,
+  "classe": "carro",
+  "confianca_media": 0.564,
+  "quadro": 54,
+  "tempo_s": 1.8,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 534,
+  "classe": "carro",
+  "confianca_media": 0.604,
+  "quadro": 70,
+  "tempo_s": 2.33,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 849,
+  "classe": "carro",
+  "confianca_media": 0.525,
+  "quadro": 85,
+  "tempo_s": 2.83,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 1623,
+  "classe": "carro",
+  "confianca_media": 0.563,
+  "quadro": 93,
+  "tempo_s": 3.1,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 1249,
+  "classe": "carro",
+  "confianca_media": 0.497,
+  "quadro": 94,
+  "tempo_s": 3.13,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 1256,
+  "classe": "carro",
+  "confianca_media": 0.611,
+  "quadro": 97,
+  "tempo_s": 3.23,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 677,
+  "classe": "carro",
+  "confianca_media": 0.67,
+  "quadro": 98,
+  "tempo_s": 3.27,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 1737,
+  "classe": "carro",
+  "confianca_media": 0.529,
+  "quadro": 112,
+  "tempo_s": 3.73,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 1089,
+  "classe": "carro",
+  "confianca_media": 0.589,
+  "quadro": 121,
+  "tempo_s": 4.03,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 1409,
+  "classe": "carro",
+  "confianca_media": 0.554,
+  "quadro": 123,
+  "tempo_s": 4.1,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 15,
+  "classe": "carro",
+  "confianca_media": 0.627,
+  "quadro": 139,
+  "tempo_s": 4.63,
+  "linha": "viaduto",
+  "sentido": "Oeste (←)"
+ },
+ {
+  "track": 1673,
+  "classe": "carro",
+  "confianca_media": 0.589,
+  "quadro": 141,
+  "tempo_s": 4.7,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 1793,
+  "classe": "carro",
+  "confianca_media": 0.662,
+  "quadro": 152,
+  "tempo_s": 5.07,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 540,
+  "classe": "carro",
+  "confianca_media": 0.593,
+  "quadro": 153,
+  "tempo_s": 5.1,
+  "linha": "viaduto",
+  "sentido": "Leste (→)"
+ },
+ {
+  "track": 2056,
+  "classe": "carro",
+  "confianca_media": 0.525,
+  "quadro": 170,
+  "tempo_s": 5.67,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 2145,
+  "classe": "carro",
+  "confianca_media": 0.626,
+  "quadro": 171,
+  "tempo_s": 5.7,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 2113,
+  "classe": "carro",
+  "confianca_media": 0.61,
+  "quadro": 180,
+  "tempo_s": 6.0,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 2779,
+  "classe": "carro",
+  "confianca_media": 0.556,
+  "quadro": 188,
+  "tempo_s": 6.27,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 2241,
+  "classe": "carro",
+  "confianca_media": 0.639,
+  "quadro": 197,
+  "tempo_s": 6.57,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ },
+ {
+  "track": 2650,
+  "classe": "carro",
+  "confianca_media": 0.469,
+  "quadro": 214,
+  "tempo_s": 7.13,
+  "linha": "rodovia-esq",
+  "sentido": "Sul (↓)"
+ },
+ {
+  "track": 3387,
+  "classe": "carro",
+  "confianca_media": 0.577,
+  "quadro": 223,
+  "tempo_s": 7.43,
+  "linha": "rodovia-dir",
+  "sentido": "Norte (↑)"
+ }
+]

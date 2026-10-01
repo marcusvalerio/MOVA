@@ -129,7 +129,8 @@ export interface TrafficObservation {
   month: string | null; // YYYY-MM
   weekday: number | null; // 0 = domingo
   dayType: DayType;
-  startTime: string; // HH:MM
+  /** HH:MM local; null quando a hora da gravação é desconhecida (nunca inventada). */
+  startTime: string | null;
   durationMinutes: number;
   vehicleCount: number | null;
   averageSpeedKmh: number | null;
