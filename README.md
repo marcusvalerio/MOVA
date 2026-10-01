@@ -10,6 +10,7 @@ Prioridade do projeto: **correção → rastreabilidade → metodologia → dado
 
 | Documento | Conteúdo |
 |---|---|
+| [docs/AVALIACAO_DOCUMENTOS.md](docs/AVALIACAO_DOCUMENTOS.md) | Avaliação dos PDFs de fluxo e velocidade e do .docx; conferência da especificação e da matriz |
 | [docs/INVENTARIO.md](docs/INVENTARIO.md) | Etapas 1–4: dados, indicadores, fórmulas, regras, interpretações; o que está confirmado e o que não está |
 | [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) | Fontes e cadeia de proveniência |
 | [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) | Todos os campos |
@@ -37,4 +38,8 @@ npm test             # vitest
 npm run typecheck
 npm run docs         # regenera docs/METHODOLOGY_CATALOG.md
 npm run build
+
+# extração das tabelas dos PDFs (requer: pip install pdfplumber)
+python3 scripts/extracao/extrair_tabelas.py docs/fontes/FLUXOS_UFRJ_REVISADO.pdf FLUXOS data/extraido/fluxos.json
+python3 scripts/extracao/avaliar.py
 ```
