@@ -24,6 +24,8 @@ Cada observação guarda `sourceRef` (documento, seção, localizador) e `raw` (
 | SIMULAÇÃO | Dados sintéticos | selo roxo "Simulação" e aviso fixo |
 | CÂMERA DE TESTE | Entrada manual no formato de visão computacional; nenhuma câmera física | selo "Câmera de teste" |
 
+**Logradouros (Data.Rio, FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS):** cadastro público de trechos de logradouro da Prefeitura (`pgeo3.rio.rj.gov.br/.../CadLog/Trechos_Logradouros`), aberto e sem autenticação. Usado só na página "Buscar endereço" para localizar o endereço e mostrar hierarquia viária, mão de circulação e velocidade regulamentada. Não traz fluxo, velocidade medida nem capacidade. Consulta feita na hora, sem cópia local (M-LOCALIZACAO-ENDERECO).
+
 **CIVITAS / Vision AI:** sem integração. Ela só será construída com acesso autorizado; nenhum scraping ou contorno de autenticação.
 
 ## Para incorporar o PDF de fluxos

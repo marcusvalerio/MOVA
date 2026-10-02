@@ -31,6 +31,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 | M-CV-CONTAGEM | Contagem por linha virtual (visão computacional) | DADO | EXPERIMENTAL |
 | M-CV-ESTABILIZACAO | Estabilização de vídeo e janela válida | HIPOTESE | EXPERIMENTAL |
 | M-INTENSIDADE-RELATIVA | Intensidade relativa ao histórico do local (barras do painel) | HIPOTESE | EXPERIMENTAL |
+| M-LOCALIZACAO-ENDERECO | Busca de endereço e radar do estudo mais próximo | REGRA | EXPERIMENTAL |
 
 ## Dados
 
@@ -266,6 +267,21 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Fontes:** Especificação MOVA (síntese do autor) — §31
 - **Lacunas:**
   - Critério operacional (mesmo segmento + mesmo tipo de dia) é do sistema; diferenças de ano/mês são mostradas mas não bloqueiam.
+
+### M-LOCALIZACAO-ENDERECO — Busca de endereço e radar do estudo mais próximo
+
+- **Status:** EXPERIMENTAL · v0.5.0
+- **O que é:** O endereço digitado é localizado no cadastro público de Logradouros da Prefeitura (Data.Rio): nome do logradouro sem acento e número dentro da faixa de numeração do lado par ou ímpar. Os locais do estudo são ordenados pela distância em linha reta entre a coordenada impressa no relatório e o traçado do trecho.
+- **Fórmula na fonte:** não documentada
+- **Implementação:** `trecho: completo LIKE nome ∧ np_ini ≤ n ≤ np_fin (lado conforme paridade de n) ; d = min distância ponto–segmento do traçado (haversine/aprox. plana local). Exibe os 3 locais mais próximos com a distância, sem limite de corte.`
+- **Variáveis:** `n` Número do imóvel digitado [—]; `d` Distância do radar do estudo ao trecho encontrado [m]
+- **Unidade:** m
+- **Por que existe:** Atender ao fluxo pedido pelo professor (digitar o endereço → mapear a via → ligar ao equipamento de medição) com os dados que existem hoje.
+- **Fontes:** nenhuma fonte documental
+- **Fonte externa:** FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS: cadastro Trechos_Logradouros (IPP/Prefeitura do Rio, via Data.Rio), serviço aberto. Hierarquia viária e velocidade regulamentada vêm desse cadastro e não são capacidade.
+- **Lacunas:**
+  - Não há critério documentado para dizer se um radar representa o tráfego de um endereço; o sistema só mostra a distância.
+  - Dados em tempo real dependem de acesso autorizado ao CIVITAS (cadastro /radars e contagens).
 
 ## Interpretações
 

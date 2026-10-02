@@ -431,6 +431,29 @@ export const METHODOLOGY: MethodologyEntry[] = [
     status: "EXPERIMENTAL",
     gaps: ["Será substituída pela condição operacional oficial quando o professor definir indicador-base e limites (M-CONDICAO)."],
   },
+  {
+    id: "M-LOCALIZACAO-ENDERECO",
+    name: "Busca de endereço e radar do estudo mais próximo",
+    category: "REGRA",
+    description:
+      "O endereço digitado é localizado no cadastro público de Logradouros da Prefeitura (Data.Rio): nome do logradouro sem acento e número dentro da faixa de numeração do lado par ou ímpar. Os locais do estudo são ordenados pela distância em linha reta entre a coordenada impressa no relatório e o traçado do trecho.",
+    formula: null,
+    implementation: "trecho: completo LIKE nome ∧ np_ini ≤ n ≤ np_fin (lado conforme paridade de n) ; d = min distância ponto–segmento do traçado (haversine/aprox. plana local). Exibe os 3 locais mais próximos com a distância, sem limite de corte.",
+    variables: [
+      { symbol: "n", meaning: "Número do imóvel digitado", unit: "—" },
+      { symbol: "d", meaning: "Distância do radar do estudo ao trecho encontrado", unit: "m" },
+    ],
+    unit: "m",
+    purpose: "Atender ao fluxo pedido pelo professor (digitar o endereço → mapear a via → ligar ao equipamento de medição) com os dados que existem hoje.",
+    sources: [],
+    externalSource: "FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS: cadastro Trechos_Logradouros (IPP/Prefeitura do Rio, via Data.Rio), serviço aberto. Hierarquia viária e velocidade regulamentada vêm desse cadastro e não são capacidade.",
+    version: "0.5.0",
+    status: "EXPERIMENTAL",
+    gaps: [
+      "Não há critério documentado para dizer se um radar representa o tráfego de um endereço; o sistema só mostra a distância.",
+      "Dados em tempo real dependem de acesso autorizado ao CIVITAS (cadastro /radars e contagens).",
+    ],
+  },
 ];
 
 export function getMethodology(id: string): MethodologyEntry {
