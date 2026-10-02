@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReplayDay, ReplaySegment } from "./types";
+import { createScene, drawScene, resetScene, stepScene } from "./scene";
 
 /**
  * Painel de reprodução: anima um dia REAL dos relatórios (fluxo e velocidade por hora).
@@ -33,7 +34,6 @@ export function sample(values: (number | null)[], t: number): number | null {
   return a + (b - a) * (x - i0);
 }
 
-interface Car { id: number; lane: number; x: number; len: number; color: string; v: number }
 
 export function Replay({ segments, initialSegment, initialDate }: { segments: ReplaySegment[]; initialSegment: string; initialDate: string }) {
   const [segId, setSegId] = useState(initialSegment);
@@ -44,14 +44,15 @@ export function Replay({ segments, initialSegment, initialDate }: { segments: Re
   const [playing, setPlaying] = useState(true);
   const [rate, setRate] = useState(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const state = useRef({ t: 6, cars: [] as Car[], acc: 0, nextId: 1, last: 0, playing: true, rate: 1, day, seg });
+  const state = useRef({ t: 6, last: 0, playing: true, rate: 1, day, seg });
+  const scene = useRef(createScene());
   state.current.playing = playing;
   state.current.rate = rate;
   state.current.day = day;
   state.current.seg = seg;
 
   useEffect(() => {
-    state.current.cars = [];
+    resetScene(scene.current);
   }, [segId, date]);
 
   useEffect(() => {
@@ -60,7 +61,6 @@ export function Replay({ segments, initialSegment, initialDate }: { segments: Re
     if (!cv) return;
     const ctx = cv.getContext("2d");
     if (!ctx) return;
-    const PAL = ["#cfd6df", "#9aa7b5", "#e8ecf1", "#5b6573", "#b9c2cc", "#7f8a97", "#d9b48f"];
     let lastUi = 0;
     const loop = (now: number) => {
       const st = state.current;
@@ -74,79 +74,18 @@ export function Replay({ segments, initialSegment, initialDate }: { segments: Re
       if (now - lastUi > 100) { lastUi = now; setT(st.t); }
       const flow = sample(st.day.flow, st.t);
       const speed = sample(st.day.speed, st.t);
-      const lanes = 3;
-      const roadTop = H * 0.22, roadH = H * 0.54, laneH = roadH / lanes;
-      // Escala de animação (não é contagem): taxa de surgimento proporcional ao fluxo do relatório.
-      const spawnPerSec = flow != null ? (flow / 3600) * 8 * st.rate : 0;
-      const vpx = (speed ?? 40) * (W / 170) * Math.sqrt(st.rate);
-      if (st.playing && flow != null) {
-        st.acc += spawnPerSec * dt;
-        while (st.acc >= 1) {
-          st.acc -= 1;
-          const lane = Math.floor(Math.random() * lanes);
-          const tail = st.cars.filter((c) => c.lane === lane).reduce((m, c) => Math.min(m, c.x), Infinity);
-          if (tail < 70) continue;
-          st.cars.push({ id: st.nextId++, lane, x: -40, len: 46 + Math.random() * 14, color: PAL[Math.floor(Math.random() * PAL.length)], v: vpx });
-        }
-      }
-      for (let l = 0; l < lanes; l++) {
-        const lc = st.cars.filter((c) => c.lane === l).sort((a, b) => b.x - a.x);
-        for (let i = 0; i < lc.length; i++) {
-          const c = lc[i];
-          c.v += (vpx * (0.9 + ((c.id * 37) % 20) / 100) - c.v) * Math.min(1, dt * 2);
-          let nx = c.x + (st.playing ? c.v * dt : 0);
-          if (i > 0) nx = Math.min(nx, lc[i - 1].x - lc[i - 1].len - 8);
-          c.x = nx;
-        }
-      }
-      st.cars = st.cars.filter((c) => c.x < W + 60);
-
-      ctx.fillStyle = "#151a21";
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "#2a3039";
-      ctx.fillRect(0, roadTop, W, roadH);
-      ctx.strokeStyle = "rgba(255,255,255,0.55)";
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(0, roadTop); ctx.lineTo(W, roadTop); ctx.moveTo(0, roadTop + roadH); ctx.lineTo(W, roadTop + roadH); ctx.stroke();
-      ctx.setLineDash([18, 16]);
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
-      for (let l = 1; l < lanes; l++) { ctx.beginPath(); ctx.moveTo(0, roadTop + l * laneH); ctx.lineTo(W, roadTop + l * laneH); ctx.stroke(); }
-      ctx.setLineDash([]);
-      const lx = W * 0.62;
-      ctx.strokeStyle = "rgba(80,220,120,0.9)";
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(lx, roadTop - 6); ctx.lineTo(lx, roadTop + roadH + 6); ctx.stroke();
-      ctx.fillStyle = "rgba(80,220,120,0.95)";
-      ctx.font = "11px ui-monospace, monospace";
-      ctx.fillText("linha virtual de contagem", lx + 6, roadTop - 10);
-      for (const c of st.cars) {
-        const y = roadTop + c.lane * laneH + laneH * 0.26, h = laneH * 0.48;
-        ctx.fillStyle = c.color;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(c.x, y, c.len, h, 4); else ctx.rect(c.x, y, c.len, h);
-        ctx.fill();
-        ctx.fillStyle = "rgba(20,24,30,0.55)";
-        ctx.fillRect(c.x + c.len * 0.62, y + 2, c.len * 0.18, h - 4);
-        ctx.strokeStyle = "rgba(91,155,255,0.9)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(c.x - 3, y - 3, c.len + 6, h + 6);
-        ctx.fillStyle = "rgba(91,155,255,0.95)";
-        ctx.font = "9px ui-monospace, monospace";
-        ctx.fillText(`carro #${c.id}`, c.x - 3, y - 5);
-      }
-      if (flow == null) {
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
-        ctx.fillRect(0, roadTop, W, roadH);
-        ctx.fillStyle = "#fff";
-        ctx.font = "14px system-ui, sans-serif";
-        ctx.fillText("Hora sem dado no relatório (não preenchida)", 16, roadTop + roadH / 2);
-      }
-      ctx.fillStyle = "rgba(255,255,255,0.8)";
-      ctx.font = "12px system-ui, sans-serif";
-      ctx.fillText("→ sentido " + st.seg.label.replace(/^Sentido /, "").split(" · ")[0], 12, roadTop + roadH + 22);
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.font = "11px system-ui, sans-serif";
-      ctx.fillText("Animação ilustrativa · densidade e velocidade dos carros seguem o relatório da hora", 12, H - 10);
+      // Tráfego em tempo real (não acelerado): taxa de chegada = fluxo da hora; velocidade = velocidade da hora.
+      if (st.playing) stepScene(scene.current, dt, flow, speed);
+      const hh = Math.floor(st.t), mm = Math.floor((st.t % 1) * 60), ss = Math.floor((((st.t % 1) * 60) % 1) * 60);
+      const p2 = (n: number) => String(n).padStart(2, "0");
+      const [y, mo, d] = st.day.date.split("-");
+      drawScene(ctx, scene.current, W, H, {
+        hour: st.t,
+        camLabel: `CAM-01 · ${st.seg.corridor.toUpperCase()} · ${st.seg.location.toUpperCase()} · ${st.seg.label.replace(/^Sentido /, "SENTIDO ").toUpperCase()}`,
+        stamp: `${d}/${mo}/${y} ${WD[new Date(st.day.date + "T12:00:00Z").getUTCDay()].toUpperCase()} ${p2(hh)}:${p2(mm)}:${p2(ss)}`,
+        noData: flow == null,
+        blink: Math.floor(now / 600) % 2 === 0,
+      });
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
