@@ -28,28 +28,41 @@ export interface SceneState {
   flash: number;
   counted: number;
   noise: HTMLCanvasElement | null;
+  warm: boolean;
 }
 
 const LANE_W = 3.5;
 const LANES = 3;
 const ROAD_HALF = (LANE_W * LANES) / 2;
-const CAM_H = 8;
+const CAM_H = 16;
 const CAM_X = ROAD_HALF + 1.2; // câmera em poste na borda direita da pista
-const Z_FAR = 150;
-const Z_NEAR = 7;
-const COUNT_Z = 24;
+const Z_FAR = 460;
+const Z_NEAR = 30;
+const COUNT_Z = 80;
 const PALETTE: [number, number, number][] = [
   [228, 230, 233], [200, 204, 210], [150, 156, 165], [70, 76, 86], [30, 33, 38], [168, 40, 38], [40, 72, 130], [196, 180, 150],
 ];
 
 export function createScene(): SceneState {
-  return { cars: [], acc: 0, nextId: 1, flash: 0, counted: 0, noise: null };
+  return { cars: [], acc: 0, nextId: 1, flash: 0, counted: 0, noise: null, warm: false };
 }
 
 export function resetScene(s: SceneState) {
   s.cars = [];
   s.acc = 0;
   s.counted = 0;
+  s.warm = false;
+}
+
+/** Preenche a via com o regime permanente da hora atual (simula o tempo de travessia instantaneamente). */
+export function warmScene(s: SceneState, flow: number | null, speed: number | null) {
+  s.warm = true;
+  if (flow == null || flow <= 0) return;
+  const v = Math.max(2, (speed ?? 40) / 3.6);
+  const steps = Math.ceil((Z_FAR - Z_NEAR) / v / 0.1) + 20;
+  for (let i = 0; i < steps; i++) stepScene(s, 0.1, flow, speed);
+  s.counted = 0;
+  s.flash = 0;
 }
 
 const laneX = (lane: number) => -ROAD_HALF + LANE_W * (lane + 0.5);
@@ -120,9 +133,10 @@ export interface DrawInfo {
 }
 
 export function drawScene(ctx: CanvasRenderingContext2D, s: SceneState, W: number, H: number, info: DrawInfo) {
-  const f = W * 0.62;
-  const cx = W * 0.6;
-  const hy = H * 0.24;
+  // Teleobjetiva (como câmeras de trânsito): mais metros de via no quadro, carros distantes ainda legíveis.
+  const f = W * 1.75;
+  const cx = W * 0.62;
+  const hy = H * 0.2;
   const P = (x: number, y: number, z: number): [number, number] => [cx + (f * (x - CAM_X)) / z, hy + (f * (CAM_H - y)) / z];
   const L = lightAt(info.hour);
   const shade = (rgb: number[], k: number) => `rgb(${rgb.map((v) => Math.round(v * k * (0.35 + 0.65 * L.ground))).join(",")})`;
@@ -162,7 +176,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, s: SceneState, W: numbe
   const zN = Z_NEAR, zF = Z_FAR;
   poly([P(-ROAD_HALF - 4, 0, zN), P(-ROAD_HALF - 4, 0, zF), P(-ROAD_HALF, 0, zF), P(-ROAD_HALF, 0, zN)], shade([96, 120, 78], 1));
   // árvores no canteiro (apenas cenário)
-  for (let z = zF - 6; z > zN + 8; z -= 13) {
+  for (let z = zF - 6; z > zN + 10; z -= 18) {
     const b0 = P(-ROAD_HALF - 2, 0, z), b1 = P(-ROAD_HALF - 2, 3, z), r = (f * 2.2) / z;
     ctx.strokeStyle = shade([80, 64, 48], 1);
     ctx.lineWidth = Math.max(1, (f * 0.25) / z);
@@ -183,10 +197,10 @@ export function drawScene(ctx: CanvasRenderingContext2D, s: SceneState, W: numbe
   ctx.fillStyle = shade([230, 230, 225], 1);
   for (let l = 1; l < LANES; l++) {
     const x = -ROAD_HALF + LANE_W * l;
-    for (let z = zN; z < zF; z += 10) poly([P(x - 0.07, 0, z), P(x - 0.07, 0, z + 4), P(x + 0.07, 0, z + 4), P(x + 0.07, 0, z)], shade([230, 230, 225], 1));
+    for (let z = zN; z < zF; z += 12) poly([P(x - 0.07, 0, z), P(x - 0.07, 0, z + 4), P(x + 0.07, 0, z + 4), P(x + 0.07, 0, z)], shade([230, 230, 225], 1));
   }
   // postes
-  for (let z = 34; z < zF; z += 30) {
+  for (let z = 60; z < zF; z += 45) {
     const base = P(ROAD_HALF + 3.8, 0, z), top = P(ROAD_HALF + 3.8, 8, z), arm = P(ROAD_HALF + 1.5, 8, z);
     ctx.strokeStyle = shade([90, 94, 100], 1);
     ctx.lineWidth = Math.max(1, (f * 0.18) / z);

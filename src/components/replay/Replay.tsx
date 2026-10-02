@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReplayDay, ReplaySegment } from "./types";
-import { createScene, drawScene, resetScene, stepScene } from "./scene";
+import { createScene, drawScene, resetScene, stepScene, warmScene } from "./scene";
 
 /**
  * Painel de reprodução: anima um dia REAL dos relatórios (fluxo e velocidade por hora).
@@ -75,6 +75,7 @@ export function Replay({ segments, initialSegment, initialDate }: { segments: Re
       const flow = sample(st.day.flow, st.t);
       const speed = sample(st.day.speed, st.t);
       // Tráfego em tempo real (não acelerado): taxa de chegada = fluxo da hora; velocidade = velocidade da hora.
+      if (!scene.current.warm) warmScene(scene.current, flow, speed);
       if (st.playing) stepScene(scene.current, dt, flow, speed);
       const hh = Math.floor(st.t), mm = Math.floor((st.t % 1) * 60), ss = Math.floor((((st.t % 1) * 60) % 1) * 60);
       const p2 = (n: number) => String(n).padStart(2, "0");
@@ -100,7 +101,7 @@ export function Replay({ segments, initialSegment, initialDate }: { segments: Re
   const dayOpts = useMemo(() => seg.days.filter((d) => d.flow.some((v) => v != null)), [seg]);
   const wd = (d: string) => WD[new Date(d + "T12:00:00Z").getUTCDay()];
   const chartMax = Math.max(seg.maxFlow, ...day.flow.map((v) => v ?? 0));
-  const jump = (h: number) => { state.current.t = h + 0.5; setT(h + 0.5); };
+  const jump = (h: number) => { state.current.t = h + 0.5; setT(h + 0.5); resetScene(scene.current); };
 
   return (
     <div className="replay">
