@@ -21,6 +21,18 @@ Prioridade do projeto: **correção → rastreabilidade → metodologia → dado
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Camadas e API |
 | [db/schema.sql](db/schema.sql) | Esquema PostgreSQL |
 
+## Contador ao vivo (`/camera/ao-vivo`)
+
+Contagem por linha virtual **no navegador**, enquanto não há acesso autorizado ao CIVITAS:
+
+1. Abra a transmissão da câmera (ex.: YouTube) em outra janela; no MOVA, clique em **Compartilhar aba**. Também aceita **arquivo de vídeo** (ex.: gravação do celular).
+2. Desenhe as linhas sobre a imagem (uma por pista/sentido) e inicie.
+3. YOLO11n (ONNX, `public/models/yolo11n.onnx`) + rastreador simplificado contam cada cruzamento por sentido e classe; agregação em 1 ou 5 min e q = n · 60 / Δt.
+4. **Conferir:** contagem manual na mesma janela → erro do contador (M-CV-CONFERENCIA).
+5. Exporta `CameraObservation` (.json), cruzamentos (.csv) e conferências (.json). Fonte: CÂMERA DE TESTE, nunca dado oficial.
+
+Nada sai do computador. Requer computador com Chrome/Edge (WebGPU; sem ele, roda em CPU, mais lento). O runtime `onnxruntime-web` é copiado para `public/ort` por `scripts/copy-ort.mjs` antes de `dev`/`build`. Código em `src/live/` (geometria, YOLO, rastreador, contagem), testado em `tests/live-counter.test.ts`; o decodificador foi conferido contra o Ultralytics (mesmas caixas e confianças).
+
 ## Princípios
 
 - **Nenhuma fórmula, limite ou classificação é inventada.** As fontes não têm fórmulas explícitas. Cada cálculo traz o status CONFIRMADO, INFERIDO, EXPERIMENTAL ou PENDENTE.

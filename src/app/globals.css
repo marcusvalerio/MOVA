@@ -239,3 +239,19 @@ button.ghost { background: transparent; color: var(--text); border-color: var(--
 .howto-list li { margin-bottom: 6px; color: var(--text-2); }
 @media (max-width: 900px) { .howto-docs, .howto-formulas { grid-template-columns: 1fr; } .howto-steps { grid-template-columns: 1fr 1fr; } .howto-steps li { margin: -1px 0 0 0; border-radius: 0 !important; } .howto-steps li::after { display: none; } }
 @media (max-width: 520px) { .howto-steps { grid-template-columns: 1fr; } }
+
+/* contador ao vivo */
+.live-stage { position: relative; }
+.live-canvas { display: block; width: 100%; height: auto; border-radius: 6px; background: #000; }
+.live-canvas.drawing { cursor: crosshair; outline: 2px solid var(--ok); }
+.live-steps { margin: 0 0 4px; padding-left: 18px; color: var(--text-2); line-height: 1.7; }
+label.file-btn { font: 600 13px var(--sans); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border-strong); color: var(--text); cursor: pointer; text-transform: none; letter-spacing: 0; }
+label.file-btn.disabled { opacity: 0.5; pointer-events: none; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.small { padding: 5px 9px; font-size: 12px; }
+td input.inp { width: 100%; min-width: 120px; }
+.tally { display: grid; gap: 8px; }
+.tally-item { display: flex; gap: 6px; align-items: stretch; }
+.tally-btn { flex: 1; display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 10px; text-align: left; padding: 12px 14px; background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
+.tally-btn strong { font-size: 20px; }
+.tally-btn:active { background: var(--accent); color: #fff; }

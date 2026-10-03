@@ -29,6 +29,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 | M-RELACAO-FLUXO-VELOCIDADE | Relação fluxo × velocidade | INTERPRETACAO | PENDENTE |
 | M-CONDICAO | Condição operacional (NORMAL → ATENÇÃO → CRÍTICO → CONGESTIONADO) | INTERPRETACAO | PENDENTE |
 | M-CV-CONTAGEM | Contagem por linha virtual (visão computacional) | DADO | EXPERIMENTAL |
+| M-CV-CONFERENCIA | Conferência do contador automático com contagem manual | HIPOTESE | EXPERIMENTAL |
 | M-CV-ESTABILIZACAO | Estabilização de vídeo e janela válida | HIPOTESE | EXPERIMENTAL |
 | M-INTENSIDADE-RELATIVA | Intensidade relativa ao histórico do local (barras do painel) | HIPOTESE | EXPERIMENTAL |
 | M-LOCALIZACAO-ENDERECO | Busca de endereço e radar do estudo mais próximo | REGRA | EXPERIMENTAL |
@@ -81,7 +82,7 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Status:** EXPERIMENTAL · v0.3.0
 - **O que é:** Veículos detectados por YOLO e rastreados por ByteTrack são contados uma vez quando o centroide do rastro cruza um segmento de linha desenhado sobre a via; o sentido vem do lado de chegada.
 - **Fórmula na fonte:** não documentada
-- **Implementação:** `cruzamento = segmentos [centroide(t−1), centroide(t)] e [P1, P2] se intersectam; sentido = sinal do produto vetorial (P2−P1)×(c−P1) após o cruzamento. Cada (rastro, linha) conta no máximo uma vez. Classe = classe mais frequente do rastro.`
+- **Implementação:** `cruzamento = segmentos [centroide(t−1), centroide(t)] e [P1, P2] se intersectam; sentido = sinal do produto vetorial (P2−P1)×(c−P1) após o cruzamento. Cada (rastro, linha) conta no máximo uma vez. Classe = classe mais frequente do rastro. Duas implementações com a mesma regra: cv/ (Python, YOLO11 + ByteTrack, vídeo gravado) e /camera/ao-vivo (navegador, YOLO11n em ONNX + rastreador simplificado, aba compartilhada ou arquivo).`
 - **Variáveis:** `n` Cruzamentos por linha e sentido no intervalo [veíc]; `Δt` Duração do intervalo analisado [s]
 - **Unidade:** veic
 - **Por que existe:** Produzir a camada OBSERVADO a partir de vídeo, no mesmo formato (CameraObservation) que uma câmera real usaria.
@@ -91,6 +92,8 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
   - Precisão não medida: falta contagem manual de referência.
   - Trocas de ID do rastreador podem duplicar contagens; veículos ocultos podem não ser contados.
   - Classes COCO (carro, moto, ônibus, caminhão) não correspondem a uma taxonomia validada.
+  - No contador ao vivo, quadros por segundo baixos (CPU fraca, aba oculta) aumentam a perda de rastros; intervalos com lacuna > 2 s são marcados como incompletos e não geram fluxo.
+  - À noite o modelo vê faróis, não veículos: precisão não avaliada.
 
 ## Indicadores
 
@@ -337,6 +340,22 @@ Status: **CONFIRMADO** = explícito numa fonte · **INFERIDO** = implícito, ded
 - **Fonte externa:** Parâmetros do sistema (3 inversões; 20%) — não presentes nos documentos.
 - **Lacunas:**
   - Parâmetros arbitrários; servem para priorizar conferência com o PDF.
+
+### M-CV-CONFERENCIA — Conferência do contador automático com contagem manual
+
+- **Status:** EXPERIMENTAL · v0.5.0
+- **O que é:** Durante a contagem ao vivo, uma pessoa conta à mão os veículos que cruzam cada linha, por sentido, numa janela de tempo; o sistema compara com os cruzamentos automáticos da mesma janela.
+- **Fórmula na fonte:** não documentada
+- **Implementação:** `e = (n_auto − n_manual) / n_manual ; e_abs = Σ_k |n_auto,k − n_manual,k| / Σ_k n_manual,k. Janela [t_ini, t_fim) no relógio da sessão; n_auto = cruzamentos com t na janela, por linha k e sentido. e mostra o viés (superconta > 0, subconta < 0); e_abs soma os erros de cada linha/sentido, sem que erros opostos se anulem. n_manual = 0 → erro indefinido.`
+- **Variáveis:** `n_auto` Cruzamentos registrados pelo contador na janela [veíc]; `n_manual` Contagem manual de referência na mesma janela [veíc]; `k` Combinação linha × sentido [—]
+- **Unidade:** —
+- **Por que existe:** Medir a precisão do contador antes de usar a câmera como fonte de dados.
+- **Fontes:** nenhuma fonte documental
+- **Fonte externa:** FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS — procedimento usual de validação de contadores automáticos; tolerância aceitável não definida.
+- **Lacunas:**
+  - Erro aceitável não definido (PENDENTE DE VALIDAÇÃO COM O PROFESSOR).
+  - A contagem manual também tem erro, sobretudo com tráfego intenso; o ideal é contar uma linha e um sentido por pessoa.
+  - O atraso entre a imagem e o clique da pessoa desloca alguns veículos na borda da janela.
 
 ### M-CV-ESTABILIZACAO — Estabilização de vídeo e janela válida
 

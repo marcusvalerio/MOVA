@@ -33,6 +33,10 @@ export default function CameraPage() {
           <p className="small" style={{ color: "var(--text-2)" }}>YOLO + rastreamento + contagem por linha virtual sobre um vídeo de tráfego com licença aberta, processado pelo mesmo adaptador abaixo.</p>
         </section>
         <section className="panel">
+          <div className="panel-head"><h2>Contador ao vivo</h2><Link className="link small" href="/camera/ao-vivo">abrir contador →</Link></div>
+          <p className="small" style={{ color: "var(--text-2)" }}>Compartilhe uma aba com uma transmissão de câmera (ou abra um vídeo gravado), desenhe as linhas e conte por linha e sentido no próprio navegador. Exporta CameraObservation no contrato abaixo e mede o erro com contagem manual.</p>
+        </section>
+        <section className="panel">
           <h2>Testar o contrato</h2>
           <CameraTester />
         </section>

@@ -377,7 +377,7 @@ export const METHODOLOGY: MethodologyEntry[] = [
       "Veículos detectados por YOLO e rastreados por ByteTrack são contados uma vez quando o centroide do rastro cruza um segmento de linha desenhado sobre a via; o sentido vem do lado de chegada.",
     formula: null,
     implementation:
-      "cruzamento = segmentos [centroide(t−1), centroide(t)] e [P1, P2] se intersectam; sentido = sinal do produto vetorial (P2−P1)×(c−P1) após o cruzamento. Cada (rastro, linha) conta no máximo uma vez. Classe = classe mais frequente do rastro.",
+      "cruzamento = segmentos [centroide(t−1), centroide(t)] e [P1, P2] se intersectam; sentido = sinal do produto vetorial (P2−P1)×(c−P1) após o cruzamento. Cada (rastro, linha) conta no máximo uma vez. Classe = classe mais frequente do rastro. Duas implementações com a mesma regra: cv/ (Python, YOLO11 + ByteTrack, vídeo gravado) e /camera/ao-vivo (navegador, YOLO11n em ONNX + rastreador simplificado, aba compartilhada ou arquivo).",
     variables: [
       { symbol: "n", meaning: "Cruzamentos por linha e sentido no intervalo", unit: "veíc" },
       { symbol: "Δt", meaning: "Duração do intervalo analisado", unit: "s" },
@@ -392,6 +392,34 @@ export const METHODOLOGY: MethodologyEntry[] = [
       "Precisão não medida: falta contagem manual de referência.",
       "Trocas de ID do rastreador podem duplicar contagens; veículos ocultos podem não ser contados.",
       "Classes COCO (carro, moto, ônibus, caminhão) não correspondem a uma taxonomia validada.",
+      "No contador ao vivo, quadros por segundo baixos (CPU fraca, aba oculta) aumentam a perda de rastros; intervalos com lacuna > 2 s são marcados como incompletos e não geram fluxo.",
+      "À noite o modelo vê faróis, não veículos: precisão não avaliada.",
+    ],
+  },
+  {
+    id: "M-CV-CONFERENCIA",
+    name: "Conferência do contador automático com contagem manual",
+    category: "HIPOTESE",
+    description:
+      "Durante a contagem ao vivo, uma pessoa conta à mão os veículos que cruzam cada linha, por sentido, numa janela de tempo; o sistema compara com os cruzamentos automáticos da mesma janela.",
+    formula: null,
+    implementation:
+      "e = (n_auto − n_manual) / n_manual ; e_abs = Σ_k |n_auto,k − n_manual,k| / Σ_k n_manual,k. Janela [t_ini, t_fim) no relógio da sessão; n_auto = cruzamentos com t na janela, por linha k e sentido. e mostra o viés (superconta > 0, subconta < 0); e_abs soma os erros de cada linha/sentido, sem que erros opostos se anulem. n_manual = 0 → erro indefinido.",
+    variables: [
+      { symbol: "n_auto", meaning: "Cruzamentos registrados pelo contador na janela", unit: "veíc" },
+      { symbol: "n_manual", meaning: "Contagem manual de referência na mesma janela", unit: "veíc" },
+      { symbol: "k", meaning: "Combinação linha × sentido", unit: "—" },
+    ],
+    unit: null,
+    purpose: "Medir a precisão do contador antes de usar a câmera como fonte de dados.",
+    sources: [],
+    externalSource: "FONTE EXTERNA / NÃO PRESENTE NOS DOCUMENTOS — procedimento usual de validação de contadores automáticos; tolerância aceitável não definida.",
+    version: "0.5.0",
+    status: "EXPERIMENTAL",
+    gaps: [
+      "Erro aceitável não definido (PENDENTE DE VALIDAÇÃO COM O PROFESSOR).",
+      "A contagem manual também tem erro, sobretudo com tráfego intenso; o ideal é contar uma linha e um sentido por pessoa.",
+      "O atraso entre a imagem e o clique da pessoa desloca alguns veículos na borda da janela.",
     ],
   },
   {

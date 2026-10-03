@@ -24,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/como-funciona">Como funciona</Link>
               <Link href="/endereco">Buscar endereço</Link>
               <Link href="/dados">Dados</Link>
+              <Link href="/camera/ao-vivo">Contador ao vivo</Link>
               <Link href="/camera/demo">Câmera + YOLO</Link>
               <div className="nav-sep" />
               <Link href="/metodologia">Metodologia</Link>

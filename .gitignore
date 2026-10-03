@@ -9,3 +9,4 @@ cv/demo/out/*.mkv
 cv/*.pt
 cv/.venv
 __pycache__/
+public/ort/
